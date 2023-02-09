@@ -1,0 +1,3 @@
+https://blog.roboflow.com/deploy-luxonis-oak/
+https://docs.roboflow.com/train
+https://docs.roboflow.com/inference
