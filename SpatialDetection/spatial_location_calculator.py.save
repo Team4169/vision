@@ -3,6 +3,8 @@
 import cv2
 import depthai as dai
 
+
+
 stepSize = 0.05
 
 newConfig = False
@@ -108,6 +110,7 @@ with dai.Device(pipeline) as device:
         # Show the frame
         cv2.imshow("depth", depthFrameColor)
         cv2.imshow("rgb", rgbFrame)
+
 
         key = cv2.waitKey(1)
         if key == ord('q'):
