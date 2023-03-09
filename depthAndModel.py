@@ -19,7 +19,7 @@ FRAME_SIZE = (640, 400)
 DET_INPUT_SIZE = (300, 300)
 model_name = "frc-23-cones-and-cube"
 zoo_type = "depthai"
-blob_path = None
+blob_path = "yolov5oakd/roboflow.blob"
 
 # DET_INPUT_SIZE = (672, 384)
 # model_name = "face-detection-adas-0001"

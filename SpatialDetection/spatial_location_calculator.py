@@ -3,8 +3,6 @@
 import cv2
 import depthai as dai
 
-stepSize = 0.05
-
 newConfig = False
 
 # Create pipeline
@@ -105,10 +103,12 @@ with dai.Device(pipeline) as device:
             cv2.putText(depthFrameColor, f"X: {int(depthData.spatialCoordinates.x)} mm", (xmin + 10, ymin + 20), fontType, 0.5, 255)
             cv2.putText(depthFrameColor, f"Y: {int(depthData.spatialCoordinates.y)} mm", (xmin + 10, ymin + 35), fontType, 0.5, 255)
             cv2.putText(depthFrameColor, f"Z: {int(depthData.spatialCoordinates.z)} mm", (xmin + 10, ymin + 50), fontType, 0.5, 255)
+        
         # Show the frame
         cv2.imshow("depth", depthFrameColor)
         cv2.imshow("rgb", rgbFrame)
-
+        
+	
         key = cv2.waitKey(1)
         if key == ord('q'):
             break
