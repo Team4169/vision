@@ -104,12 +104,11 @@ while rval:
     key = cv2.waitKey(20)
     if key == 27: # exit on ESC
         break
+    cv2.imshow("big", frame)
 
     s =""
-    im = frame.copy()[:416, :640, :].reshape(1, 3, 416, 640)
-    print(im.shape)
-    # print("im", im)
-    # quit()
+    frame = frame[:416, :640, :]
+    im = frame.reshape(1, 3, 416, 640)
     with dt[0]:
         im = torch.from_numpy(im).to(model.device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -143,8 +142,14 @@ while rval:
                 s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
             for *xyxy, conf, cls in reversed(det):
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                print(cls, *xywh, conf)
+                xa = int((xywh[0] - (xywh[2] / 2)) * 640)
+                ya = int((xywh[0] + (xywh[2] / 2)) * 416)
+                xb = int((xywh[1] - (xywh[3] / 2)) * 640)
+                yb = int((xywh[1] + (xywh[3] / 2)) * 416)
+                print((xa, ya), (xb, yb), int(conf*100), s)
+                cv2.rectangle(frame, (xa, ya), (xb, yb), (255, 255, 255), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
 
+    cv2.imshow("rgb", frame)
     # Print time (inference-only)
     LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
     

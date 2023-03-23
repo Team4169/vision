@@ -200,40 +200,35 @@ with dai.Device(pipeline) as device:
         depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
         depthFrameColor = cv2.equalizeHist(depthFrameColor)
         depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
+        
+        print(type(depthFrameColor), dir(depthFrameColor))
+        quit()
+        
+        for j in range(len(outxywh[1:])):
+            topLeft.x = outxywh[j][0]
+            topLeft.y = outxywh[j][1]
+            bottomRight.x = outxywh[j][2]
+            bottomRight.y = outxywh[j][3]
 
-        spatialData = spatialCalcQueue.get().getSpatialLocations()
-        for depthData in spatialData:
-            roi = depthData.config.roi
-            roi = roi.denormalize(width=depthFrameColor.shape[1], height=depthFrameColor.shape[0])
+            spatialData = spatialCalcQueue.get().getSpatialLocations()
+            for depthData in spatialData:
+                roi = depthData.config.roi
+                roi = roi.denormalize(width=depthFrameColor.shape[1], height=depthFrameColor.shape[0])
             
-            for i in range(len(outxyxy)):
-                xmin = int(outxyxy[i][0])
-                ymin = int(outxyxy[i][1])
-                xmax = int(outxyxy[i][2])
-                ymax = int(outxyxy[i][3])
+                for i in range(len(outxyxy)):
+                    xmin = int(outxyxy[i][0])
+                    ymin = int(outxyxy[i][1])
+                    xmax = int(outxyxy[i][2])
+                    ymax = int(outxyxy[i][3])
                 
-                fontType = cv2.FONT_HERSHEY_TRIPLEX
-                cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
-                cv2.putText(depthFrameColor, f"X: {int(depthData.spatialCoordinates.x)} mm", (xmin + 10, ymin + 20), fontType, 0.5, 255)
-                cv2.putText(depthFrameColor, f"Y: {int(depthData.spatialCoordinates.y)} mm", (xmin + 10, ymin + 35), fontType, 0.5, 255)
-                cv2.putText(depthFrameColor, f"Z: {int(depthData.spatialCoordinates.z)} mm", (xmin + 10, ymin + 50), fontType, 0.5, 255)
+                    fontType = cv2.FONT_HERSHEY_TRIPLEX
+                    cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
+                    cv2.putText(depthFrameColor, f"X: {int(depthData.spatialCoordinates.x)} mm", (xmin + 10, ymin + 20), fontType, 0.5, 255)
+                    cv2.putText(depthFrameColor, f"Y: {int(depthData.spatialCoordinates.y)} mm", (xmin + 10, ymin + 35), fontType, 0.5, 255)
+                    cv2.putText(depthFrameColor, f"Z: {int(depthData.spatialCoordinates.z)} mm", (xmin + 10, ymin + 50), fontType, 0.5, 255)
 
-            print(int(depthData.spatialCoordinates.z))
+                print(int(depthData.spatialCoordinates.z))
             
         cv2.imshow("depth", depthFrameColor)
-        cv2.imshow("rgb", rgbFrame)
         
         key = cv2.waitKey(1)
-        print(outxywh)
-        topLeft.x = outxywh[0]
-        topLeft.y = outxywh[1]
-        bottomRight.x = outxywh[2]
-        bottomRight.y = outxywh[3]
-                
-        if newConfig:
-            config.roi = dai.Rect(topLeft, bottomRight)
-            config.calculationAlgorithm = dai.SpatialLocationCalculatorAlgorithm.AVERAGE
-            cfg = dai.SpatialLocationCalculatorConfig()
-            cfg.addROI(config)
-            spatialCalcConfigInQueue.send(cfg)
-            newConfig = False

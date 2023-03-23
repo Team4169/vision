@@ -50,7 +50,6 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 torch.no_grad()
 
-
 weights=ROOT / 'v5.pt' # model path or triton URL
 source=ROOT / '0' # file/dir/URL/glob/screen/0(webcam)
 data=ROOT / 'data/coco128.yaml' # dataset.yaml path
@@ -125,12 +124,8 @@ for _, im, im0s, _, s in dataset:
     # Process predictions
     for i, det in enumerate(pred):  # per image
         seen += 1
-        if webcam:  # batch_size >= 1
-            im0, frame = im0s[i].copy(), dataset.count
-            s += f'{i}: '
-        else:
-            im0, frame = im0s.copy(), getattr(dataset, 'frame', 0)
-
+        im0 = im0s[i].copy()
+        s += f'{i}: '
         s += '%gx%g ' % im.shape[2:]  # print string
         gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
         annotator = Annotator(im0, line_width=line_thickness, example=str(names))
@@ -145,6 +140,12 @@ for _, im, im0s, _, s in dataset:
             for *xyxy, conf, cls in reversed(det):
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                 print(cls, *xywh, conf)
+
+                if save_img or view_img:  # Add bbox to image
+                    c = int(cls)  # integer class
+                    label = f'{names[c]} {conf:.2f}'
+                    annotator.box_label(xyxy, label, color=colors(c, True))
+
 
         # Stream results
         im0 = annotator.result()
