@@ -66,13 +66,16 @@ while rval:
     if key == 27: # exit on ESC
         break
         
-    frame = frame[:320, :640, :]
+    a = frame[:320, :640, :]
+    # a = frame.reshape(320, 640, 3)
+    # a[:, :, 2], a[:, :, 0] = a[:, :, 0], a[:, :, 2]
+    Image.fromarray(a).save("newtest4.png")
     im = letterbox(frame, imgsz, stride=stride, auto=pt)[0]
     im = im.transpose((2, 0, 1))[::-1]
     im = np.ascontiguousarray(im)
     
-    a = im.reshape(320, 640, 3)
-    Image.fromarray(a).save("newtest.png")
+    # a = im.reshape(320, 640, 3)
+    # Image.fromarray(a).save("newtest.png")
 
     s= ""
     with dt[0]:

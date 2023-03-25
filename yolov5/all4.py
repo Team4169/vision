@@ -23,7 +23,7 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 from utils.augmentations import letterbox
 
-import cv2, math
+import cv2, math, ntcore
 
 torch.no_grad()
 
@@ -66,7 +66,18 @@ stride, names, pt = model.stride, model.names, model.pt
 imgsz = check_img_size(imgsz, s=stride)  # check image size
 
 # Run inference
-seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+windows, dt = [], (Profile(), Profile(), Profile())
+
+# Network Tables
+inst = ntcore.NetworkTableInstance.getDefault()
+table=inst.getTable("SmartDashboard")
+xSub=table.getDoubleTopic("x").publish()
+ySub=table.getDoubleTopic("y").publish()
+distSub = table.getDoubleTopic("dist").publish()
+seeSub = table.getDoubleTopic("see").publish()
+inst.startClient4("example client")
+inst.setServerTeam(4169)
+inst.startDSClient()
 
 # DEPTH
 newConfig = False
@@ -148,14 +159,17 @@ with dai.Device(pipeline) as device:
         depthFrame = inDepth.getFrame() # depthFrame values are in millimeters
         rgbFrame = rgbQueue.get().getFrame()
         
+        depthFrame = np.flip(depthFrame, (0, 1))
+        rgbFrame = np.flip(rgbFrame, (0, 1))
+        
         im = rgbFrame
         im = letterbox(im, imgsz, stride=stride, auto=pt)[0]
         im = im.transpose((2, 0, 1))[::-1]
         im = np.ascontiguousarray(im)
 
         s= ""
-        outxyxy = [[0, 0, 0, 0]]
-        outxywh = [[0, 0, 0, 0]]
+        outxyxy = []
+        outxywh = []
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -183,11 +197,11 @@ with dai.Device(pipeline) as device:
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 for *xyxy, conf, cls in reversed(det):
-                    print(xyxy)
+                    # print(xyxy)
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     outxyxy.append(xyxy.copy())
                     outxywh.append(xywh.copy())
-                    print(cls, *xywh, conf)
+                    # print(cls, *xywh, conf)
 
                     c = int(cls)  # integer class
                     label = f'{names[c]} {conf:.2f}'
@@ -202,21 +216,33 @@ with dai.Device(pipeline) as device:
         depthFrameColor = cv2.equalizeHist(depthFrameColor)
         depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
         
-        for i in range(1, len(outxyxy)):
+        minDistIndex = 0
+        outDistList = []
+        for i in range(len(outxyxy)):
             xmin = int(outxyxy[i][0])
             ymin = int(outxyxy[i][1])
             xmax = int(outxyxy[i][2])
             ymax = int(outxyxy[i][3])
-            print(xmin, ymin, xmax, ymax)
+            # print(xmin, ymin, xmax, ymax)
             if abs(xmax - xmin) > 0 and abs(ymax - ymin) > 0:
             	outdist = np.average(depthFrame[int(outxyxy[i][0]) : int(outxyxy[i][2]), int(outxyxy[i][1]) : int(outxyxy[i][3])])
+            	outDistList.append(outdist)
             else:
                 continue
-            print(outdist)
+            # print(outdist)
             if not math.isnan(outdist):
                 cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
                 cv2.putText(depthFrameColor, f"Z: {int(outdist)} mm", (xmin + 10, ymin + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+            if 750 < outdist < minDistIndex:
+                minDistIndex = i
             
         cv2.imshow("depth", depthFrameColor)
+        if len(outDistList) > 0 and not math.isnan(outDistList[minDistIndex]):
+            xSub.set(float((outxyxy[minDistIndex][0] + outxyxy[minDistIndex][2]) / 2))
+            ySub.set(float((outxyxy[minDistIndex][1] + outxyxy[minDistIndex][3]) / 2))
+            distSub.set(float(outDistList[minDistIndex]))
+            seeSub.set(float(1))
+        else:
+            seeSub.set(float(0))
         
         key = cv2.waitKey(1)
