@@ -1,23 +1,22 @@
 from dt_apriltags import Detector
 import numpy as np
-import os, cv2
+import os, cv2, time
 
 at_detector = Detector(families='tag16h5',
-                       nthreads=1,
-                       quad_decimate=1.0,
+                       nthreads=4,
+                       quad_decimate=4.0,
                        quad_sigma=0.0,
                        refine_edges=1,
-                       decode_sharpening=0.25,
+                       decode_sharpening=0.0,
                        debug=0)
 
 key = cv2. waitKey(1)
 webcam = cv2.VideoCapture(0)
 while True:
     try:
+        startime = time.time()
         check, frame = webcam.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
-        tags = at_detector.detect(frame)
-        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR) 
+        tags = at_detector.detect(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
 
         for tag in tags:
             for idx in range(len(tag.corners)):
@@ -29,8 +28,9 @@ while True:
                         fontScale=0.8,
                         color=(0, 0, 255))
 
-        cv2.imshow("Capturing", frame)
+        cv2.imshow("Camera", frame)
         key = cv2.waitKey(1)
+        print("fps:", round(1 / (time.time() - startime), 2))
         
     except(KeyboardInterrupt):
         print("Turning off camera.")
