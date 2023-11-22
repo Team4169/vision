@@ -8,6 +8,7 @@ from torchvision.transforms import functional as F
 from torchvision.datasets import CocoDetection
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights
 from sklearn.metrics import accuracy_score
+from PIL import Image
 
 class CustomDataset(Dataset):
     def __init__(self, root, annFile, transforms=None, train=True, image_size=(256, 256)):
@@ -18,17 +19,12 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         img, target = self.coco.__getitem__(idx)
-
-        # Resize the image
-        img = F.resize(img, self.image_size)
-
-        # Convert the image to a tensor
+        img = F.resize(img, self.image_size, Image.BICUBIC)
         img = F.to_tensor(img)
-
-        # Apply your custom transformations here if needed
         if self.transforms is not None:
             img = self.transforms(img)
-
+        print(img.shape)
+        print(target)
         return img, target
 
     def __len__(self):
@@ -39,9 +35,9 @@ train_dataset = CustomDataset(root=root_path + "/train", annFile=root_path + "/t
 test_dataset = CustomDataset(root=root_path + "/test", annFile=root_path + "/test/_annotations.coco.json", train=False)
 valid_dataset = CustomDataset(root=root_path + "/valid", annFile=root_path + "/valid/_annotations.coco.json", train=False)
 
-train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=4)
-test_dataloader = DataLoader(test_dataset, batch_size=2, shuffle=False, num_workers=4)
-valid_dataloader = DataLoader(valid_dataset, batch_size=2, shuffle=False, num_workers=4)
+train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=2)
+test_dataloader = DataLoader(test_dataset, batch_size=2, shuffle=False, num_workers=2)
+valid_dataloader = DataLoader(valid_dataset, batch_size=2, shuffle=False, num_workers=2)
 
 model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
 num_classes = 3
@@ -61,9 +57,11 @@ for epoch in range(num_epochs):
     model.train()
     for images, targets in train_dataloader:
         # Move images to the device individually
-        print(images)
         images = [img.to(device) for img in images]
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        if isinstance(targets[0], list):
+            targets = [{k: v[0].to(device) if not isinstance(v, list) else v for k, v in t.items()} for t in targets]
+        else:
+            targets = [{k: v.to(device) if not isinstance(v, list) else v for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
