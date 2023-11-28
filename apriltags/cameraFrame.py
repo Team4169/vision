@@ -7,7 +7,7 @@ sudo apt install python3-opencv
 import cv2 
 
 key = cv2. waitKey(1)
-webcam = cv2.VideoCapture(0)
+webcam = cv2.VideoCapture(3)
 while True:
     try:
         check, frame = webcam.read()

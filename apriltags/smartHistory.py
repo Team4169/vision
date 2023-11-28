@@ -1,6 +1,19 @@
 from dt_apriltags import Detector
 import numpy as np
-import os, cv2 
+import os, cv2
+
+def update_history(history, value):
+    history.append(value)
+    if len(history) > 25: # <-- History Length
+        history.pop(0)
+
+def is_real_detection(history, current_value):
+    if len(history) < 20:
+        return False  # Not enough history yet, consider it a false positive to be safe
+
+        # Check if the current value is similar to the average value in the history
+        average_position = [sum(x)/len(x) for x in zip(*[y for y in a])]
+        return abs([sum(x)/len(x) for x in zip(*[y for y in a])]current_position - average_position) < self.position_threshold
 
 at_detector = Detector(families='tag16h5',
                        nthreads=1,
@@ -16,7 +29,15 @@ tag_size = 0.1524
 key = cv2. waitKey(1)
 
 cap1 = cv2.VideoCapture(0)
-cap2 = cv2.VideoCapture(1)
+cap2 = cv2.VideoCapture(2)
+
+aprilTagTracker = ObjectTracker()
+
+def rot_matrix_to_euler(R):
+    yaw = np.arctan2(R[1][0],R[0][0])
+    pitch = np.arctan2(-R[2,0],(R[2][1]**2+R[2][2]**2)**.5)
+    roll = np.arctan2(R[2][1],R[2][2])
+    return(yaw, pitch, roll)
 
 def runCamera(cap, index):
     ret, frame = cap.read()
@@ -32,7 +53,13 @@ def runCamera(cap, index):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.8,
                         color=(0, 0, 255))
-            
+            detectd_value = {"pos": [POSITION], "rot":rot_matrix_to_euler(tag.pose_R), "id":tag.tag_id}
+            update_history(detected_position)
+            if tracker.is_consistent_detection(detected_position):
+                # Update the tracker with the current position if it's consistent
+                tracker.update_history(detected_position)
+                # Process the valid detections
+            print()
         cv2.imshow("Camera " + str(index), frame)
 
 while True:
@@ -42,7 +69,7 @@ while True:
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
+
     except(KeyboardInterrupt):
         print("Turning off camera.")
         cap1.release()

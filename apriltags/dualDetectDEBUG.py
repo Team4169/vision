@@ -18,7 +18,12 @@ key = cv2. waitKey(1)
 cap1 = cv2.VideoCapture(0)
 cap2 = cv2.VideoCapture(1)
 
+DEBUGA = ''
+DEBUGB = True
+
 def runCamera(cap, index):
+    global DEBUGA
+    global DEBUGB
     ret, frame = cap.read()
     if ret:
         tags = at_detector.detect(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), estimate_tag_pose=True, camera_params=camera_params, tag_size=tag_size)
@@ -32,6 +37,10 @@ def runCamera(cap, index):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.8,
                         color=(0, 0, 255))
+            if (DEBUGB):
+                DEBUGB = False
+                DEBUGA = tag.corners
+            print(DEBUGA)
             
         cv2.imshow("Camera " + str(index), frame)
 
