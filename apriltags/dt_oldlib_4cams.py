@@ -15,6 +15,12 @@ key = cv2. waitKey(1)
 cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
+cap3 = cv2.VideoCapture(3)
+
+for cap in [cap0, cap1, cap2, cap3]:
+    cap.set(3, 360)
+    cap.set(4, 480)
+    cap.set(5, 12)
 
 def runCamera(cap, index):
     ret, frame = cap.read()
@@ -40,6 +46,7 @@ while True:
         runCamera(cap0, 0)
         runCamera(cap1, 1)
         runCamera(cap2, 2)
+        runCamera(cap3, 3)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -48,6 +55,7 @@ while True:
         cap0.release()
         cap1.release()
         cap2.release()
+        cap3.release()
 
         print("Cams Off. Program ended.")
         cv2.destroyAllWindows()
