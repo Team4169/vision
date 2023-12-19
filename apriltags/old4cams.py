@@ -1,18 +1,20 @@
 import apriltag
 import cv2
 
+#Old code, less organised but faster
+
+options = apriltag.DetectorOptions(families='tag16h5',
+                                   border=2,
+                                   nthreads=4,
+                                   quad_decimate=1.0,
+                                   quad_blur=0.0,
+                                   refine_edges=True,
+                                   refine_decode=False,
+                                   refine_pose=False,
+                                   debug=True,
+                                   quad_contours=True)
 def findtags(cap, name):
 
-    options = apriltag.DetectorOptions(families='tag16h5',
-                                       border=2,
-                                       nthreads=4,
-                                       quad_decimate=1.0,
-                                       quad_blur=0.0,
-                                       refine_edges=True,
-                                       refine_decode=False,
-                                       refine_pose=False,
-                                       debug=True,
-                                       quad_contours=True)
     detector = apriltag.Detector(options)
     
     image = cap.read()[1]
@@ -55,7 +57,8 @@ for cap in [cap0, cap1, cap2, cap3]:
     cap.set(3, 360)
     cap.set(4, 480)
     cap.set(5, 12)
-    
+
+lastframe=0
 while True:
     try:
     
