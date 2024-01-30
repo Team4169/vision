@@ -3,9 +3,10 @@ import cv2
 import torch
 
 # Load YOLOv8 model from .pt file
-model_path = 'path_to_your_yolov8_model.pt'  # Replace with the path to your .pt file
-model = torch.load(model_path)
-model.cuda()  # Enable CUDA
+model_path = '/home/jetson/Downloads/yolov81.pt'  # Replace with the path to your .pt file
+model_dict = torch.load(model_path)
+model = model_dict['model']  # Access the model from the dictionary
+model.cuda()
 
 # Setup DepthAI pipeline
 pipeline = dai.Pipeline()

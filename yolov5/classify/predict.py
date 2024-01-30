@@ -54,11 +54,11 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
+        weights=ROOT / '/home/jetson/v5.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(224, 224),  # inference size (height, width)
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='0',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
         nosave=False,  # do not save images/videos

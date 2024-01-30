@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import cv2
-import depthai as dai
+#import depthai as dai
 import numpy as np
 import os
 import platform
@@ -23,7 +23,7 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 from utils.augmentations import letterbox
 
-import cv2, math, ntcore
+import cv2, math #, ntcore
 
 torch.no_grad()
 
@@ -69,6 +69,7 @@ imgsz = check_img_size(imgsz, s=stride)  # check image size
 windows, dt = [], (Profile(), Profile(), Profile())
 
 # Network Tables
+'''
 inst = ntcore.NetworkTableInstance.getDefault()
 table=inst.getTable("SmartDashboard")
 xSub=table.getDoubleTopic("x").publish()
@@ -78,6 +79,7 @@ seeSub = table.getDoubleTopic("see").publish()
 inst.startClient4("example client")
 inst.setServerTeam(4169)
 inst.startDSClient()
+'''
 
 # DEPTH
 newConfig = False

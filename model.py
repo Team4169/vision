@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import functional as F
 from torchvision.datasets import CocoDetection
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights
-from sklearn.metrics import accuracy_score
 from PIL import Image
 
 class CustomDataset(Dataset):
@@ -30,7 +29,7 @@ class CustomDataset(Dataset):
     def __len__(self):
         return len(self.coco)
 
-root_path = "2023dataset/0"
+root_path = "dataset"
 train_dataset = CustomDataset(root=root_path + "/train", annFile=root_path + "/train/_annotations.coco.json", train=True)
 test_dataset = CustomDataset(root=root_path + "/test", annFile=root_path + "/test/_annotations.coco.json", train=False)
 valid_dataset = CustomDataset(root=root_path + "/valid", annFile=root_path + "/valid/_annotations.coco.json", train=False)
