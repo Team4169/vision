@@ -43,7 +43,7 @@ def findtags(cap, name):
 	    # draw the tag family on the image
 	    cv2.putText(image, str(r.tag_id), (ptA[0], ptA[1] - 15),
 		    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-	    #print("Just found: {}".format(str(r.tag_id)))
+	    print("Just found: {}".format(str(r.tag_id)))
 	    
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
@@ -54,18 +54,31 @@ cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
 
 for cap in [cap0, cap1, cap2, cap3]:
-    cap.set(3, 360)
-    cap.set(4, 480)
+    #cap.set(3, 360)
+    #cap.set(4, 480)
     cap.set(5, 12)
 
-lastframe=0
+framecount=0
 while True:
+    framecount+=1
     try:
     
-        findtags(cap0,'0')
-        findtags(cap1,'1')
-        findtags(cap2,'2')
-        findtags(cap3,'3')
+        if framecount%4==0:
+            try:
+                findtags(cap0,'0')
+            except: pass
+        if framecount%4==1:
+            try:
+                findtags(cap1,'1')
+            except: pass
+        if framecount%4==2:
+            try:
+                findtags(cap2,'2')
+            except: pass
+        if framecount%4==3:
+            try:
+                findtags(cap3,'3')
+            except: pass
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
