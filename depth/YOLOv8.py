@@ -81,8 +81,7 @@ camRgb = pipeline.create(dai.node.ColorCamera)
 camRgb.setPreviewSize(640, 640)
 camRgb.setInterleaved(False)
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_4_K)
-camRgb.setIspScale(1, 3) # You don't need to downscale (4k -> 720P) video frames
-# Squeeze the frame
+camRgb.setIspScale(1, 3)
 camRgb.setPreviewKeepAspectRatio(False)
 
 xoutFrames = pipeline.create(dai.node.XLinkOut)
