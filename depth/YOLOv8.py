@@ -128,7 +128,6 @@ with dai.Device(pipeline) as device:
 
     def displayFrame(name, frame):
         for detection in detections:
-            print(detection)
             bbox = frameNorm(frame, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
             text.putText(frame, labelMap[detection.label], (bbox[0] + 10, bbox[1] + 20))
             # text.putText(frame, labels[detection.label], (bbox[0] + 10, bbox[1] + 20))

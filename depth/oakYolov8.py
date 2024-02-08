@@ -13,5 +13,6 @@ with OakCamera(args=args) as oak:
     # print(nn.out.nn_data)
     outer = nn.out
     visualizer = oak.visualize([nn.out.tracker, nn.out.passthrough], fps=True)
-    print(visualizer.labels)
+
+    print(visualizer.get_bbox())
     oak.start(blocking=True)
