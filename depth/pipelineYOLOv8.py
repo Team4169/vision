@@ -72,7 +72,6 @@ nnOut.setStreamName("nn")
 
 # Properties
 camRgb.setPreviewSize(W, H)
-
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 camRgb.setInterleaved(False)
 camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)

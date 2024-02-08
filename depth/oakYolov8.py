@@ -11,16 +11,7 @@ with OakCamera(args=args) as oak:
     color = oak.create_camera('color')
     nn = oak.create_nn(args['config'], color, nn_type='yolo', spatial=True)
     # print(nn.out.nn_data)
-    visualizer = oak.visualize(nn.out.passthrough, fps=True)
-    visualizer.detections(
-        color=(255, 255, 255),
-        thickness=2,
-        bbox_style=BboxStyle.RECTANGLE,
-        label_position=TextPosition.MID,
-    ).text(
-        font_color=(255, 255, 255),
-        auto_scale=True
-    ).tracking(
-        line_thickness=5
-    )
+    outer = nn.out
+    visualizer = oak.visualize([nn.out.tracker, nn.out.passthrough], fps=True)
+    print(visualizer.labels)
     oak.start(blocking=True)
