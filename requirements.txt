@@ -1,0 +1,7 @@
+depthai_sdk
+depthai
+apriltag
+pathplannerlib
+wpimath
+numpy
+opencv-python
