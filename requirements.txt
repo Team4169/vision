@@ -5,3 +5,4 @@ pathplannerlib
 wpimath
 numpy
 opencv-python
+matplotlib
