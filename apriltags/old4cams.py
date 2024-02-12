@@ -63,22 +63,18 @@ while True:
     framecount+=1
     try:
     
-        if framecount%4==0:
-            try:
-                findtags(cap0,'0')
-            except: pass
-        if framecount%4==1:
-            try:
-                findtags(cap1,'1')
-            except: pass
-        if framecount%4==2:
-            try:
-                findtags(cap2,'2')
-            except: pass
-        if framecount%4==3:
-            try:
-                findtags(cap3,'3')
-            except: pass
+        try:
+            findtags(cap0,'0')
+        except: pass
+        try:
+            findtags(cap1,'1')
+        except: pass
+        try:
+            findtags(cap2,'2')
+        except: pass
+        try:
+            findtags(cap3,'3')
+        except: pass
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
