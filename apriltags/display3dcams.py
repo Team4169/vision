@@ -1,5 +1,8 @@
 import apriltag, cv2, json
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.transforms import Affine2D
 
 cam_props = {
 'back':{'cam_matrix': np.array([[649.12576246,0,349.34554103],[0,650.06837252,219.01641695],[0,0,1]],dtype=np.float32), 'dist': np.array([0.09962565,-0.92286434,-0.00491307,0.00470977,1.3384658], dtype = np.float32), 'offset':np.array([5.5,17,-0.5],dtype=np.float32)},
@@ -15,8 +18,42 @@ file_path = "/home/jetson/vision/apriltags/maps/computerLab.fmap"
 with open(file_path, 'r') as file:
     data = json.load(file)
 coordinates = {}
+displaycoordinates = []
 for apriltag_ in data["fiducials"]:
+    displaycoordinates.append((apriltag_["id"], apriltag_["transform"][3], apriltag_["transform"][7]))
     coordinates[apriltag_["id"]] = [apriltag_["transform"][3], apriltag_["transform"][7]]
+
+apriltagx = [coord[1] for coord in displaycoordinates]
+apriltagy = [coord[2] for coord in displaycoordinates]
+apriltagids = [coord[0] for coord in displaycoordinates]
+
+
+# Plot Apriltag locations
+plt.ion()
+
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.scatter(apriltagx, apriltagy, color='b')
+
+for i, txt in enumerate(apriltagids): 
+    if (txt in [0, 1]):
+        ax.annotate(txt, (apriltagx[i] - 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+    else:
+        ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+    
+# Draw Game Field Boundary
+fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
+ax.add_patch(fieldrect)
+
+# Adjusting plot limits
+# plt.xlim(-0.5, 7.54215)
+# plt.ylim(-2.5, 2.5)
+plt.xlim(-10, 10)
+plt.ylim(-10, 10)
+
+# Display plot
+plt.gca().set_aspect('equal', adjustable='box')
+plt.title('2024 Game Field Positioning Simulation')
+plt.grid(False)
 
 def IDCams():
     for i in range(len(all_caps)):
@@ -78,8 +115,33 @@ def findtags(cap, name):
     
     results = detector.detect(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
 
+    # Clear previous robots from the plot
+    ax.clear()
+    
+    # Plot AprilTag locations
+    ax.scatter(apriltagx, apriltagy, color='b')
+
+    for i, txt in enumerate(apriltagids): 
+        if (txt in [0, 1]):
+            ax.annotate(txt, (apriltagx[i] - 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+        else:
+            ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+    
+    # Draw Game Field Boundary
+    ax.add_patch(fieldrect)
+
+    # Adjusting plot limits
+    # ax.set_xlim(-0.5, 7.54215)
+    # ax.set_ylim(-2.5, 2.5)
+    ax.set_xlim(-10, 10)
+    ax.set_ylim(-10, 10)
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_title('2024 Game Field Positioning Simulation')
+    ax.grid(False)
+
     # loop over the AprilTag detection results
     posList = []
+    tvecList = []
     for r in results:
 
         # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -122,23 +184,48 @@ def findtags(cap, name):
 
         tvec *= 0.0254 # convert to meters
         
+        tvecList.append([tvec[2], tvec[0]])
         if (r.tag_id in coordinates):
             posList.append(
-                [coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]]
+                [coordinates[r.tag_id][0] - tvec[2], coordinates[r.tag_id][1] - tvec[0]]
             )
 
-        '''
-        if tvec is not None:
-            print("tag found on cam", name, "\nrvec:",rvec,"\ntvec:",tvec,"\npythag dist:",(float(tvec[0])**2+float(tvec[1])**2+float(tvec[2])**2)**.5)
-        else:
-            print("bad tvec")
-        '''
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
+    # Plot Robot location
     if len(posList) > 0:
+    	'''
         pos = np.mean(posList, axis=0)
+
         print(pos)
+        center = pos
+        rotation = 0
+
+        width = 0.8255
+        height = 0.6604
+
+        rect = patches.Rectangle((-width / 2, -height / 2), width, height, edgecolor='black', facecolor='white')
+
+        transform = Affine2D().rotate_deg(rotation).translate(center[0], center[1])
+        rect.set_transform(transform + ax.transData)
+
+        ax.add_patch(rect)
+
+        arrow_length = 0.125
+        arrow_width = 0.025
+
+        arrow = patches.FancyArrow(0, 0, arrow_length, 0, width=arrow_width, edgecolor='black', facecolor='black', head_width=0.3, head_length=0.2)
+        arrow.set_transform(transform + ax.transData)
+
+        ax.add_patch(arrow)
+    	'''
+    	
+    	bx = np.array(tvecList)[:, 0]
+    	by = np.array(tvecList)[:, 1]
+    	ax.scatter(bx, by)
+    	fig.canvas.draw()
+    	fig.canvas.flush_events()
 
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
