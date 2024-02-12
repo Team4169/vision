@@ -128,12 +128,13 @@ cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
+
 all_caps = [cap0, cap1, cap2, cap3]
 scalefac = .5# Max range = 13ft * scalefac
 for capn in all_caps:
     capn.set(3, 480 * scalefac)
     capn.set(4, 640 * scalefac)
-    capn.set(5, 12) #fps
+    capn.set(5, 2) #fps
 
 
 IDCams()
