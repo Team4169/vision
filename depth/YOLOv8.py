@@ -3,7 +3,7 @@ from depthai_sdk.visualize.configs import BboxStyle, TextPosition
 import argparse, time
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-conf", "--config", help="Trained YOLO json config path", default='/home/team4169/vision/depth/2024model/YOLOv8nNORO.json', type=str)
+parser.add_argument("-conf", "--config", help="Trained YOLO json config path", default='/home/jetson/vision/depth/2024model/YOLOv8nNORO.json', type=str)
 args = ArgsParser.parseArgs(parser)
 
 def printDetections(packet):
