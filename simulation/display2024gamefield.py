@@ -5,7 +5,7 @@ from matplotlib.transforms import Affine2D
 from PIL import Image
 
 # Get Apritag locations
-file_path = "/home/team4169/vision/apriltags/maps/2024gamefield.fmap"
+file_path = "/home/jetson/vision/apriltags/maps/2024gamefield.fmap"
 
 with open(file_path, 'r') as file:
     data = json.load(file)
@@ -59,7 +59,7 @@ arrow.set_transform(transform + ax.transData)
 ax.add_patch(arrow)
 
 # Add Field Map Image
-field_map_path = "/home/team4169/vision/simulation/fieldmap.png"
+field_map_path = "/home/jetson/vision/simulation/fieldmap.png"
 field_map = Image.open(field_map_path).convert("RGBA")
 
 opacity = int(225 * 0.5)

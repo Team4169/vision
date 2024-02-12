@@ -1,6 +1,5 @@
-import apriltag, cv2
+import apriltag, cv2, json
 import numpy as np
-from time import sleep
 
 cam_props = {
 'back':{'cam_matrix': np.array([[649.12576246,0,349.34554103],[0,650.06837252,219.01641695],[0,0,1]],dtype=np.float32), 'dist': np.array([0.09962565,-0.92286434,-0.00491307,0.00470977,1.3384658], dtype = np.float32), 'offset':np.array([5.5,17,-0.5],dtype=np.float32)},
@@ -11,9 +10,17 @@ cam_props = {
 # <Assign correct params to correct cams> v
 camidnames = ['x','x','x','x']
 
+# Get Apritag locations
+file_path = "/home/jetson/vision/apriltags/maps/computerLab.fmap"
+with open(file_path, 'r') as file:
+    data = json.load(file)
+coordinates = {}
+for apriltag_ in data["fiducials"]:
+    coordinates[apriltag_["id"]] = [apriltag_["transform"][3], apriltag_["transform"][7]]
+
 def IDCams():
     for i in range(len(all_caps)):
-        camidnames[i] = 'front';continue
+        camidnames[i] = 'front'
         image = all_caps[i].read()[1]
         cv2.imshow('cap ' + str(i), image)
         cv2.waitKey(200)
@@ -32,7 +39,7 @@ def IDCams():
         cv2.destroyAllWindows()
 # </Assign correct params to correct cams> ^
 
-options = apriltag.DetectorOptions(families='tag36h11',
+options = apriltag.DetectorOptions(families='tag16h5',
                                    border=1,
                                    nthreads=4,
                                    quad_decimate=0.0,
@@ -72,6 +79,7 @@ def findtags(cap, name):
     results = detector.detect(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
 
     # loop over the AprilTag detection results
+    posList = []
     for r in results:
 
         # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -111,16 +119,27 @@ def findtags(cap, name):
         
         for i, offset_num in enumerate(origin_offset):
             tvec[i] -= offset_num
+
+        tvec *= 0.0254 # convert to meters
         
-        
-        
+        if (r.tag_id in coordinates):
+            posList.append(
+                [coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]]
+            )
+
+        '''
         if tvec is not None:
             print("tag found on cam", name, "\nrvec:",rvec,"\ntvec:",tvec,"\npythag dist:",(float(tvec[0])**2+float(tvec[1])**2+float(tvec[2])**2)**.5)
         else:
             print("bad tvec")
+        '''
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
+    
+    if len(posList) > 0:
+        pos = np.mean(posList, axis=0)
+        print(pos)
+
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
 
@@ -128,9 +147,14 @@ cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
+<<<<<<< HEAD
 
 all_caps = [cap0, cap1, cap2, cap3]
 scalefac = .5# Max range = 13ft * scalefac
+=======
+all_caps = [cap0, cap1]
+scalefac = 1# Max range = 13ft * scalefac
+>>>>>>> 5d916dd80462aa3944219a6af84880bf1c8102dc
 for capn in all_caps:
     capn.set(3, 480 * scalefac)
     capn.set(4, 640 * scalefac)
@@ -144,8 +168,8 @@ while True:
     
         findtags(cap0,'0')
         findtags(cap1,'1')
-        findtags(cap2,'2')
-        findtags(cap3,'3')
+        # findtags(cap2,'2')
+        # findtags(cap3,'3')
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -153,8 +177,8 @@ while True:
     except(KeyboardInterrupt):
         cap0.release()
         cap1.release()
-        cap2.release()
-        cap3.release()
+        # cap2.release()
+        # cap3.release()
 
         print("/nCams Off. Program ended.")
         cv2.destroyAllWindows()
