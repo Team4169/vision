@@ -49,9 +49,11 @@ options = apriltag.DetectorOptions(families='tag16h5',
                                    refine_pose=False,
                                    debug=True,
                                    quad_contours=False)
+
+detector = apriltag.Detector(options) 
+
 def findtags(cap, name):
     
-    detector = apriltag.Detector(options) 
     image = cap.read()[1]
     
     image = cv2.resize(image, (640,480))
@@ -147,14 +149,8 @@ cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
-<<<<<<< HEAD
-
-all_caps = [cap0, cap1, cap2, cap3]
-scalefac = .5# Max range = 13ft * scalefac
-=======
 all_caps = [cap0, cap1]
 scalefac = 1# Max range = 13ft * scalefac
->>>>>>> 5d916dd80462aa3944219a6af84880bf1c8102dc
 for capn in all_caps:
     capn.set(3, 480 * scalefac)
     capn.set(4, 640 * scalefac)

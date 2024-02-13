@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.transforms import Affine2D
+from concurrent.futures import ThreadPoolExecutor
 
 cam_props = {
 'back':{'cam_matrix': np.array([[649.12576246,0,349.34554103],[0,650.06837252,219.01641695],[0,0,1]],dtype=np.float32), 'dist': np.array([0.09962565,-0.92286434,-0.00491307,0.00470977,1.3384658], dtype = np.float32), 'offset':np.array([5.5,17,-0.5],dtype=np.float32)},
@@ -26,34 +27,6 @@ for apriltag_ in data["fiducials"]:
 apriltagx = [coord[1] for coord in displaycoordinates]
 apriltagy = [coord[2] for coord in displaycoordinates]
 apriltagids = [coord[0] for coord in displaycoordinates]
-
-
-# Plot Apriltag locations
-plt.ion()
-
-fig, ax = plt.subplots(figsize=(8, 8))
-ax.scatter(apriltagx, apriltagy, color='b')
-
-for i, txt in enumerate(apriltagids): 
-    if (txt in [0, 1]):
-        ax.annotate(txt, (apriltagx[i] - 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
-    else:
-        ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
-    
-# Draw Game Field Boundary
-fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
-ax.add_patch(fieldrect)
-
-# Adjusting plot limits
-# plt.xlim(-0.5, 7.54215)
-# plt.ylim(-2.5, 2.5)
-plt.xlim(-10, 10)
-plt.ylim(-10, 10)
-
-# Display plot
-plt.gca().set_aspect('equal', adjustable='box')
-plt.title('2024 Game Field Positioning Simulation')
-plt.grid(False)
 
 def IDCams():
     for i in range(len(all_caps)):
@@ -86,9 +59,10 @@ options = apriltag.DetectorOptions(families='tag16h5',
                                    refine_pose=False,
                                    debug=True,
                                    quad_contours=False)
+detector = apriltag.Detector(options) 
+
 def findtags(cap, name):
     
-    detector = apriltag.Detector(options) 
     image = cap.read()[1]
     
     image = cv2.resize(image, (640,480))
@@ -115,33 +89,8 @@ def findtags(cap, name):
     
     results = detector.detect(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
 
-    # Clear previous robots from the plot
-    ax.clear()
-    
-    # Plot AprilTag locations
-    ax.scatter(apriltagx, apriltagy, color='b')
-
-    for i, txt in enumerate(apriltagids): 
-        if (txt in [0, 1]):
-            ax.annotate(txt, (apriltagx[i] - 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
-        else:
-            ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
-    
-    # Draw Game Field Boundary
-    ax.add_patch(fieldrect)
-
-    # Adjusting plot limits
-    # ax.set_xlim(-0.5, 7.54215)
-    # ax.set_ylim(-2.5, 2.5)
-    ax.set_xlim(-10, 10)
-    ax.set_ylim(-10, 10)
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_title('2024 Game Field Positioning Simulation')
-    ax.grid(False)
-
     # loop over the AprilTag detection results
     posList = []
-    tvecList = []
     for r in results:
 
         # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -193,13 +142,57 @@ def findtags(cap, name):
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
-    # Plot Robot location
-    if len(posList) > 0:
-    	'''
-        pos = np.mean(posList, axis=0)
+    # show the output image after AprilTag detection
+    cv2.imshow(name, image)
+    return posList
 
-        print(pos)
-        center = pos
+# Init cams
+cap0 = cv2.VideoCapture(0)
+cap1 = cv2.VideoCapture(1)
+cap2 = cv2.VideoCapture(2)
+cap3 = cv2.VideoCapture(3)
+all_caps = [cap0, cap1]
+scalefac = 1# Max range = 13ft * scalefac
+for capn in all_caps:
+    capn.set(3, 480 * scalefac)
+    capn.set(4, 640 * scalefac)
+    capn.set(5, 12) #fps
+
+IDCams()
+
+# Init plot
+plt.ion()
+fig, ax = plt.subplots(figsize=(8, 8))
+
+while True:
+    try:
+    
+        posList = findtags(cap0,'0') + findtags(cap1,'1') # + findtags(cap2,'2') + findtags(cap3,'3')
+
+        # Clear previous robots from the plot
+        ax.clear()
+        
+        # Plot AprilTag locations
+        ax.scatter(apriltagx, apriltagy, color='b')
+
+        for i, txt in enumerate(apriltagids): 
+            if (txt in [0, 1]):
+                ax.annotate(txt, (apriltagx[i] - 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+            else:
+                ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+        
+        # Draw Game Field Boundary
+        ax.add_patch(fieldrect)
+
+        # Adjusting plot limits
+        ax.set_xlim(-0.5, 7.54215)
+        ax.set_ylim(-2.5, 2.5)
+        ax.set_aspect('equal', adjustable='box')
+        ax.set_title('2024 Game Field Positioning Simulation')
+        ax.grid(False)
+
+        # Plot robot
+        center = np.mean(posList, axis=0)
         rotation = 0
 
         width = 0.8255
@@ -219,38 +212,10 @@ def findtags(cap, name):
         arrow.set_transform(transform + ax.transData)
 
         ax.add_patch(arrow)
-    	'''
-    	
-    	bx = np.array(tvecList)[:, 0]
-    	by = np.array(tvecList)[:, 1]
-    	ax.scatter(bx, by)
+
+        # Update plot
     	fig.canvas.draw()
     	fig.canvas.flush_events()
-
-    # show the output image after AprilTag detection
-    cv2.imshow(name, image)
-
-cap0 = cv2.VideoCapture(0)
-cap1 = cv2.VideoCapture(1)
-cap2 = cv2.VideoCapture(2)
-cap3 = cv2.VideoCapture(3)
-all_caps = [cap0, cap1]
-scalefac = 1# Max range = 13ft * scalefac
-for capn in all_caps:
-    capn.set(3, 480 * scalefac)
-    capn.set(4, 640 * scalefac)
-    capn.set(5, 12) #fps
-
-
-IDCams()
-
-while True:
-    try:
-    
-        findtags(cap0,'0')
-        findtags(cap1,'1')
-        # findtags(cap2,'2')
-        # findtags(cap3,'3')
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
