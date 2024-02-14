@@ -39,7 +39,7 @@ def IDCams():
         cv2.destroyAllWindows()
 # </Assign correct params to correct cams> ^
 
-options = apriltag.DetectorOptions(families='tag16h5',
+options = apriltag.DetectorOptions(families='tag36h11',
                                    border=1,
                                    nthreads=4,
                                    quad_decimate=0.0,
@@ -138,19 +138,16 @@ def findtags(cap, name):
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
-    if len(posList) > 0:
-        pos = np.mean(posList, axis=0)
-        print(pos)
-
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
+    return posList
 
 cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
-all_caps = [cap0, cap1]
-scalefac = 1# Max range = 13ft * scalefac
+all_caps = [cap0, cap1, cap2, cap3]
+scalefac = 0.85# Max range = 13ft * scalefac
 for capn in all_caps:
     capn.set(3, 480 * scalefac)
     capn.set(4, 640 * scalefac)
@@ -161,11 +158,11 @@ IDCams()
 
 while True:
     try:
-    
-        findtags(cap0,'0')
-        findtags(cap1,'1')
-        # findtags(cap2,'2')
-        # findtags(cap3,'3')
+        
+        fullPosList = findtags(cap0,'0')
+        fullPosList.extend(findtags(cap1,'1'))
+        fullPosList.extend(findtags(cap2,'2'))
+        fullPosList.extend(findtags(cap3,'3'))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
