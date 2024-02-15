@@ -11,6 +11,10 @@ cam_props = {
 # <Assign correct params to correct cams> v
 camidnames = ['x','x','x','x']
 
+# Init shared vars
+#manager = multiprocessing.Manager()
+#fullPosList = manager.list()
+
 # Get Apritag locations
 file_path = "/home/jetson/vision/apriltags/maps/computerLab.fmap"
 with open(file_path, 'r') as file:
@@ -21,6 +25,7 @@ for apriltag_ in data["fiducials"]:
 
 def IDCams():
     for i in range(4):
+        camidnames[i] = 'front';continue
         #image = all_caps[i].read()[1]
         #cv2.imshow('cap ' + str(i), image)
         #cv2.waitKey(200)
@@ -52,17 +57,7 @@ options = apriltag.DetectorOptions(families='tag36h11',
 
 detector = apriltag.Detector(options) 
 
-def findtags(param):
-    cap = cv2.VideoCapture(param)
-    cap.set(3, 480 * .85)
-    cap.set(4, 640 * .85)
-    cap.set(5, 12) #fps
-    name = str(param)
-    #cv2.imshow(name, cap.read()[1])
-    
-    while True:
-        image = cap.read()[1]
-        
+def findtags(image, name):
         image = cv2.resize(image, (640,480))
         
         # <get params> v
@@ -126,13 +121,13 @@ def findtags(param):
                 tvec = np.array([tvec[2],tvec[1],-tvec[0]], dtype=np.float32)
             # </rotate> ^
             
+            # <get position of robot based on known positions of tags> v
             for i, offset_num in enumerate(origin_offset):
                 tvec[i] -= offset_num
             
-            if (r.tag_id in coordinates):
-                posList.append(
-                    [coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]]
-                )
+            #if (r.tag_id in coordinates):
+            #    fullPosList.extend([coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]])
+            # </get position of robot based on known positions of tags> ^
 
             '''
             if tvec is not None:
@@ -143,18 +138,59 @@ def findtags(param):
             cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
+        
         # show the output image after AprilTag detection
-        cv2.imshow(name, image)
-        cv2.waitKey(10)
-        #return posList
+
+        return [[image], int(name)], posList
 
 
 if __name__ == '__main__':
-
+    cap0 = cv2.VideoCapture(0)
+    cap1 = cv2.VideoCapture(1)
+    cap2 = cv2.VideoCapture(2)
+    cap3 = cv2.VideoCapture(3)
+    all_caps = [cap0, cap1, cap2, cap3]
+    scalefac = 0.85# Max range = 13ft * scalefac
+    for capn in all_caps:
+        capn.set(3, 480 * scalefac)
+        capn.set(4, 640 * scalefac)
+        capn.set(5, 12) #fps
 
 
     IDCams()
-    print('start')
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        results = [executor.submit(findtags, i) for i in range(4)]
-    print('end')
+while True:
+    try:
+        imgs = [cap0.read()[1], cap1.read()[1], cap2.read()[1], cap3.read()[1]]
+        
+        fullImgList = []
+        fullPosList = []
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = [executor.submit(findtags, imgs[i], ['0','1','2','3'][i]) for i in range(4)]
+    
+            for ret in concurrent.futures.as_completed(results):
+               fullImgList.append(ret.result()[0])
+               fullPosList.extend(ret.result()[1])
+        #print( fullImgList[0][1] );quit()
+        #fullImgList = [[imgA, 0],[imgB, 3],[imgC,2],[imgD,1]]
+        sortedImgs = []
+        for elementnum in range(4):
+            for element in fullImgList:
+                if element[1] == elementnum:
+                    sortedImgs.append(element[0]) 
+       
+        for i, img in enumerate(sortedImgs):
+            cv2.imshow('img' + str(i), np.array(img[0]))
+        print(fullPosList)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        
+    except(KeyboardInterrupt):
+        cap0.release()
+        cap1.release()
+        cap2.release()
+        cap3.release()
+
+        print("/nCams Off. Program ended.")
+        cv2.destroyAllWindows()
+        break
