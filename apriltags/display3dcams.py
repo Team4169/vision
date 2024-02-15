@@ -1,4 +1,4 @@
-import apriltag, cv2, json
+import apriltag, cv2, json, math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -24,7 +24,7 @@ displaycoordinates = []
 for apriltag_ in data["fiducials"]:
     displaycoordinates.append((apriltag_["id"], apriltag_["transform"][3], apriltag_["transform"][7]))
     coordinates[apriltag_["id"]] = [apriltag_["transform"][3], apriltag_["transform"][7]]
-    yaws[apriltag_["id"]] = apriltag_["transform"][11]
+    yaws[apriltag_["id"]] = apriltag_["transform"]
 
 apriltagx = [coord[1] for coord in displaycoordinates]
 apriltagy = [coord[2] for coord in displaycoordinates]
@@ -68,7 +68,7 @@ def findtags(cap, name):
     
     image = cap.read()[1]
     
-    image = cv2.resize(image, (640,480))
+    #image = cv2.resize(image, (640,480))
     
     # <get params> v
     camera_matrix = cam_props[camidnames[int(name)]]['cam_matrix']
@@ -123,13 +123,17 @@ def findtags(cap, name):
         
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         
-        # <rotate> v
+        # <rotate> v 
+        
         if camidnames[int(name)] == 'back':
             tvec = np.array([-tvec[0],tvec[1],-tvec[2]], dtype=np.float32)
+            rvec[1] = rvec[1] + math.pi
         elif camidnames[int(name)] == 'left':
             tvec = np.array([-tvec[2],tvec[1],tvec[0]], dtype=np.float32)
+            rvec[1] = rvec[1] - math.pi/2
         elif camidnames[int(name)] == 'right':
             tvec = np.array([tvec[2],tvec[1],-tvec[0]], dtype=np.float32)
+            rvec[1] = rvec[1] + math.pi/2
         # </rotate> ^
         
         for i, offset_num in enumerate(origin_offset):
@@ -137,12 +141,31 @@ def findtags(cap, name):
 
         tvec *= 0.0254 # convert to meters
         
-        tvecList.append([tvec[2], tvec[0]])
         if (r.tag_id in coordinates):
             posList.append(
                 [coordinates[r.tag_id][0] - tvec[2], coordinates[r.tag_id][1] - tvec[0]]
             )
-            rotList.append([coordinates[r.tag_id][0] - tvec[2], coordinates[r.tag_id][1] - tvec[0], r.tag_id])
+             
+            matrix = yaws[r.tag_id]
+            rotation_matrix = np.array([matrix[0:4], matrix[4:8], matrix[8:12], matrix[12:16]])[:3, :3]
+
+
+            sy = math.sqrt(rotation_matrix[0, 0] * rotation_matrix[0, 0] +  rotation_matrix[1, 0] * rotation_matrix[1, 0])
+            if sy > 1e-6:
+                rotation = [
+                    math.atan2(rotation_matrix[2, 1], rotation_matrix[2, 2]),
+                    math.atan2(-rotation_matrix[2, 0], sy),
+                    math.atan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
+                ]
+            else:
+                rotation = [
+                    math.atan2(-rotation_matrix[1, 2], rotation_matrix[1, 1]),
+                    math.atan2(-rotation_matrix[2, 0], sy),
+                    0
+                ]
+            
+            rotList.append((rotation[2] - rvec[1]))
+            print(f"rotation:{rotation[2]}, rvec{rvec[1]}")
 
 
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
@@ -150,7 +173,7 @@ def findtags(cap, name):
     
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
-    return posList
+    return posList, rotList
 
 # Init cams
 cap0 = cv2.VideoCapture(0)
@@ -158,11 +181,11 @@ cap1 = cv2.VideoCapture(1)
 cap2 = cv2.VideoCapture(2)
 cap3 = cv2.VideoCapture(3)
 all_caps = [cap0, cap1]
-scalefac = 1# Max range = 13ft * scalefac
-for capn in all_caps:
-    capn.set(3, 480 * scalefac)
-    capn.set(4, 640 * scalefac)
-    capn.set(5, 12) #fps
+#scalefac = 1# Max range = 13ft * scalefac
+#for capn in all_caps:
+#    capn.set(3, 480 * scalefac)
+#    capn.set(4, 640 * scalefac)
+#    capn.set(5, 12) #fps
 
 IDCams()
 
@@ -173,8 +196,11 @@ fig, ax = plt.subplots(figsize=(8, 8))
 while True:
     try:
     
-        posList = findtags(cap0,'0') + findtags(cap1,'1') # + findtags(cap2,'2') + findtags(cap3,'3')
-
+        fullPosList, fullRotList = findtags(cap0,'0')
+        posList, rotList = findtags(cap1,'1')
+        fullPosList.extend(posList)
+        fullRotList.extend(rotList)
+        
         # Clear previous robots from the plot
         ax.clear()
         
@@ -199,31 +225,33 @@ while True:
         ax.grid(False)
 
         # Plot robot
-        center = np.mean(posList, axis=0)
-        rotation = 0
+        if len(posList) > 0:
+            center = np.mean(fullPosList, axis=0)
+            # print(center)
+            rotation = np.mean(fullRotList) * 180 / math.pi
+            print(rotation)
+            width = 0.8255
+            height = 0.6604
 
-        width = 0.8255
-        height = 0.6604
+            rect = patches.Rectangle((-width / 2, -height / 2), width, height, edgecolor='black', facecolor='white')
 
-        rect = patches.Rectangle((-width / 2, -height / 2), width, height, edgecolor='black', facecolor='white')
+            transform = Affine2D().rotate_deg(rotation).translate(center[0], center[1])
+            rect.set_transform(transform + ax.transData)
 
-        transform = Affine2D().rotate_deg(rotation).translate(center[0], center[1])
-        rect.set_transform(transform + ax.transData)
+            ax.add_patch(rect)
 
-        ax.add_patch(rect)
+            arrow_length = 0.125
+            arrow_width = 0.025
 
-        arrow_length = 0.125
-        arrow_width = 0.025
+            arrow = patches.FancyArrow(0, 0, arrow_length, 0, width=arrow_width, edgecolor='black', facecolor='black', head_width=0.3, head_length=0.2)
+            arrow.set_transform(transform + ax.transData)
 
-        arrow = patches.FancyArrow(0, 0, arrow_length, 0, width=arrow_width, edgecolor='black', facecolor='black', head_width=0.3, head_length=0.2)
-        arrow.set_transform(transform + ax.transData)
+            ax.add_patch(arrow)
 
-        ax.add_patch(arrow)
-
-        # Update plot
-    	fig.canvas.draw()
-    	fig.canvas.flush_events()
-
+            # Update plot
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         

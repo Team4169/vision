@@ -21,9 +21,9 @@ for apriltag_ in data["fiducials"]:
 
 def IDCams():
     for i in range(4):
-        #image = all_caps[i].read()[1]
-        #cv2.imshow('cap ' + str(i), image)
-        #cv2.waitKey(200)
+        image = cv2.VideoCapture(i).read()[1]
+        cv2.imshow('cap ' + str(i), image)
+        cv2.waitKey(200)
         camname=input('which cam is this? (l)eft,(r)ight,(f)ront,(b)ack: ')
         if camname == 'l':
             camname = 'left'
@@ -39,7 +39,7 @@ def IDCams():
         cv2.destroyAllWindows()
 # </Assign correct params to correct cams> ^
 
-options = apriltag.DetectorOptions(families='tag36h11',
+options = apriltag.DetectorOptions(families='tag16h5',
                                    border=1,
                                    nthreads=4,
                                    quad_decimate=0.0,
@@ -62,7 +62,6 @@ def findtags(param):
     
     while True:
         image = cap.read()[1]
-        
         image = cv2.resize(image, (640,480))
         
         # <get params> v
@@ -146,8 +145,10 @@ def findtags(param):
         # show the output image after AprilTag detection
         cv2.imshow(name, image)
         cv2.waitKey(10)
-        #return posList
-
+        
+        f = open(param + ".txt", "w")
+        f.write(posList)
+        f.close()
 
 if __name__ == '__main__':
 
