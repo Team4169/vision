@@ -19,10 +19,12 @@ file_path = "/home/jetson/vision/apriltags/maps/computerLab.fmap"
 with open(file_path, 'r') as file:
     data = json.load(file)
 coordinates = {}
+yaws = {}
 displaycoordinates = []
 for apriltag_ in data["fiducials"]:
     displaycoordinates.append((apriltag_["id"], apriltag_["transform"][3], apriltag_["transform"][7]))
     coordinates[apriltag_["id"]] = [apriltag_["transform"][3], apriltag_["transform"][7]]
+    yaws[apriltag_["id"]] = apriltag_["transform"][11]
 
 apriltagx = [coord[1] for coord in displaycoordinates]
 apriltagy = [coord[2] for coord in displaycoordinates]
@@ -59,6 +61,7 @@ options = apriltag.DetectorOptions(families='tag16h5',
                                    refine_pose=False,
                                    debug=True,
                                    quad_contours=False)
+
 detector = apriltag.Detector(options) 
 
 def findtags(cap, name):
@@ -91,6 +94,7 @@ def findtags(cap, name):
 
     # loop over the AprilTag detection results
     posList = []
+    rotList = []
     for r in results:
 
         # extract the bounding box (x, y)-coordinates for the AprilTag
@@ -138,6 +142,8 @@ def findtags(cap, name):
             posList.append(
                 [coordinates[r.tag_id][0] - tvec[2], coordinates[r.tag_id][1] - tvec[0]]
             )
+            rotList.append([coordinates[r.tag_id][0] - tvec[2], coordinates[r.tag_id][1] - tvec[0], r.tag_id])
+
 
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
@@ -182,6 +188,7 @@ while True:
                 ax.annotate(txt, (apriltagx[i] + 0.6, apriltagy[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
         
         # Draw Game Field Boundary
+        fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
         ax.add_patch(fieldrect)
 
         # Adjusting plot limits
