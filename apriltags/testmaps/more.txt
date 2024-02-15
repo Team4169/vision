@@ -1,0 +1,1 @@
+to generate more go to https://tools.limelightvision.io/map-builder, add a marker, only change the yaw (needs to be between -180 and 180)
