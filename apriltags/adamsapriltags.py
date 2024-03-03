@@ -16,6 +16,7 @@ cam_props = {
 camidnames = ['x','x','x','x']
 
 # Enviornment Initialization
+# Adam: I used this, but the fmap will work as well. If you want to change it to use fmap, go ahead.
 FIELD_TAGS = [[0, 0, 0], [6.808597, -3.859403, (120+90)*pi/180], [7.914259, -3.221609, (120+90)*pi/180], [8.308467, 0.877443, (180+90)*pi/180], [8.308467, 1.442593, (180+90)*pi/180], [6.429883, 4.098925, (270+90)*pi/180 - 2*pi], [-6.429375, 4.098925, (270+90)*pi/180], [-8.308975, 1.442593, (0+90)*pi/180], [-8.308975, 0.877443, (0+90)*pi/180], [-7.914767, -3.221609, (60+90)*pi/180], [-6.809359, -3.859403, (60+90)*pi/180], [3.633851, -0.392049, (300+90)*pi/180], [3.633851, 0.393065, (60+90)*pi/180], [2.949321, -0.000127, (180+90)*pi/180], [-2.950083, -0.000127, (0+90)*pi/180], [-3.629533, 0.393065, (120+90)*pi/180], [-3.629533, -0.392049, (240+90)*pi/180]]
 
 
@@ -76,8 +77,8 @@ def findtags(cap, name):
 
     mapx, mapy = cv2.initUndistortRectifyMap(camera_matrix, distortion_coefficients, None, new_camera_matrix, (w,h), 5)
     dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
-
     # crop the image
+    
     x, y, w, h = roi
     dst = dst[y:y+h, x:x+w]
     image = dst
@@ -110,7 +111,7 @@ def findtags(cap, name):
         icenter = (int(r.center[0]), int(r.center[1]))
         cv2.circle(image, icenter, 5, (0, 0, 255), -1)
 
-        U = 0.0857
+        U = 0.0857 #In meters, use 3.375 of you want inches.
 
         object_points = np.array([[-U,-U,0],[U,-U,0],[U,U,0],[-U,U,0],[0,0,0]], dtype=np.float32)
         
@@ -120,9 +121,8 @@ def findtags(cap, name):
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         
         print('rvec:',rvec,'\n','tvec:',tvec)
-        
-        # <rotate>
-        
+        #This is the formula we made on Sunday, it is probably improvable, just make sure you don't break any of the functionality.
+        # <Magic Rotate Code> v
         c=cos(FIELD_TAGS[r.tag_id][2]);s=sin(FIELD_TAGS[r.tag_id][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
@@ -133,15 +133,17 @@ def findtags(cap, name):
             rvec[2] += pi/2
         elif camidnames[int(name)] == 'right':
             rvec[2] += -pi/2
-        # </rotate> ^
+        # <Magic Rotate Code> ^
         position = [FIELD_TAGS[r.tag_id][0] - tvec[0], FIELD_TAGS[r.tag_id][1] - tvec[2]]
 
         angle = FIELD_TAGS[r.tag_id][2] - rvec[2]
-        #Rotate tvec
+        
 
         c=cos(angle);s=sin(angle)
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-        
+
+        # IMPORTANT: I commented this out, since our offset measurements are wrong.
+        # If you want to fix this, change the cam_props offset. (BE SURE TO WRITE OFFSET IN *METERS*)
         #for i, offset_num in enumerate(origin_offset):
         #    tvec[i] -= offset_num
             
@@ -159,8 +161,8 @@ def findtags(cap, name):
 # Init cams
 cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
-cap2 = cv2.VideoCapture(2)
-cap3 = cv2.VideoCapture(3)
+#cap2 = cv2.VideoCapture(2)
+#cap3 = cv2.VideoCapture(3)
 all_caps = [cap0, cap1]
 #scalefac = 1# Max range = 13ft * scalefac
 #for capn in all_caps:
