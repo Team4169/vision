@@ -123,7 +123,7 @@ def findtags(cap, name):
         
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         
-        # <rotate> v 
+        # <rotate> v <-- this codeA
         
         if camidnames[int(name)] == 'back':
             tvec = np.array([-tvec[0],tvec[1],-tvec[2]], dtype=np.float32)
@@ -140,6 +140,19 @@ def findtags(cap, name):
             tvec[i] -= offset_num
 
         tvec *= 0.0254 # convert to meters
+
+        '''
+        yo boys,
+        i am sorry, but i can't really fix the problem without testing so i thought i would leave some notes
+        here is what to do:
+        - *** make sure to use the full field simulation when testing and use a variety of tags, because I think there is a problem with our programmming lab simulation ***
+        - rotation[2] is the yaw of the tag on the field (-180 to 180 deg), basically what you want to do is you want to rotate the tvec[2] (the change in x) and the tvec[0] (the change in y) based on this yaw
+            - this will produce a new change in x and change in y at the angle of the tag and will fix the problem of all the realtions being to the left
+        - optional suggestions:
+            - delete the rotate code (i marked it with codeA)
+            - delete the rvec code
+        just text me if you have any questions about my bad code
+        '''
         
         if (r.tag_id in coordinates):
             posList.append(
