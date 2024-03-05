@@ -23,10 +23,11 @@ FIELD_TAGS_Y = [FIELD_TAG[1] for FIELD_TAG in FIELD_TAGS]
 FIELD_TAGS_ID = [i for i in range(len(FIELD_TAGS))]; FIELD_TAGS_ID[0] = 'x'
 
 # </Assign correct params to correct cams> v
-def IDCams():
+def IDCams(caps):
     while True:
-        for i in range(len(all_caps)):
-            image = all_caps[i].read()[1]
+        for i in range(len(caps)):
+            cap = cv2.VideoCapture(i)
+            image = cap.read()[1]
             cv2.imshow('cap ' + str(i), image)
             cv2.waitKey(200)
             camname=input('which cam is this? (l)eft,(r)ight,(f)ront,(b)ack: ')
@@ -41,6 +42,7 @@ def IDCams():
             else:
                 print('Error. Use l, r, f, or b.')
                 break
+            cap.release()
             camidnames[i] = camname
             cv2.destroyAllWindows()
         areWeDone = input('Are we done? (y or n): ').lower()
@@ -157,6 +159,9 @@ def findtags(cap, name):
     cv2.imshow(name, image)
     return posList, rotList
 
+
+IDCams([0,1])
+
 # Init cams
 cap0 = cv2.VideoCapture(0)
 cap1 = cv2.VideoCapture(1)
@@ -169,7 +174,6 @@ all_caps = [cap0, cap1]
 #    capn.set(4, 640 * scalefac)
 #    capn.set(5, 12) #fps
 
-IDCams()
 
 # <Init NetworkTables> v
 inst = ntcore.NetworkTableInstance.getDefault()
