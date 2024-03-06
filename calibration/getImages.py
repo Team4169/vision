@@ -1,6 +1,6 @@
 import cv2
  
-cap = cv2.VideoCapture(3)
+cap = cv2.VideoCapture(0)
  
 num = 0
  
