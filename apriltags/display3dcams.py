@@ -123,23 +123,55 @@ def findtags(cap, name):
         
         _, _2, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         
+<<<<<<< HEAD
         # <get rvec from tvec> v 
         
         rvec = math.atan2(tvec[0],tvec[2])
         print(tvec)
         # </get rvec from tvec> ^
+=======
+        # <rotate> v <-- this codeA
+        
+        if camidnames[int(name)] == 'back':
+            tvec = np.array([-tvec[0],tvec[1],-tvec[2]], dtype=np.float32)
+            rvec[1] = rvec[1] + math.pi
+        elif camidnames[int(name)] == 'left':
+            tvec = np.array([-tvec[2],tvec[1],tvec[0]], dtype=np.float32)
+            rvec[1] = rvec[1] - math.pi/2
+        elif camidnames[int(name)] == 'right':
+            tvec = np.array([tvec[2],tvec[1],-tvec[0]], dtype=np.float32)
+            rvec[1] = rvec[1] + math.pi/2
+        # </rotate> ^
+>>>>>>> 4bc38a244f4988d0ee58eb99ee120e875804631d
         
         for i, offset_num in enumerate(origin_offset):
             tvec[i] -= offset_num
 
         tvec *= 0.0254 # convert to meters
+
+        '''
+        yo boys,
+        i am sorry, but i can't really fix the problem without testing so i thought i would leave some notes
+        here is what to do:
+        - *** make sure to use the full field simulation when testing and use a variety of tags, because I think there is a problem with our programmming lab simulation ***
+        - rotation[2] is the yaw of the tag on the field (-180 to 180 deg), basically what you want to do is you want to rotate the tvec[2] (the change in x) and the tvec[0] (the change in y) based on this yaw
+            - this will produce a new change in x and change in y at the angle of the tag and will fix the problem of all the realtions being to the left
+        - optional suggestions:
+            - delete the rotate code (i marked it with codeA)
+            - delete the rvec code
+        just text me if you have any questions about my bad code
+        '''
         
         if (r.tag_id in coordinates):
             posList.append(
                 [coordinates[r.tag_id + 1][0] - tvec[2], coordinates[r.tag_id + 1][1] - tvec[0]]
             )
              
+<<<<<<< HEAD
             matrix = yaws[r.tag_id + 1]
+=======
+            matrix = yaws[r.tag_id]
+>>>>>>> 4bc38a244f4988d0ee58eb99ee120e875804631d
             rotation_matrix = np.array([matrix[0:4], matrix[4:8], matrix[8:12], matrix[12:16]])[:3, :3]
 
 
@@ -157,7 +189,12 @@ def findtags(cap, name):
                     0
                 ]
             
+<<<<<<< HEAD
             rotList.append((rotation[2] - rvec))
+=======
+            rotList.append((rotation[2] - rvec[1]))
+            print(f"rotation:{rotation[2]}, rvec{rvec[1]}")
+>>>>>>> 4bc38a244f4988d0ee58eb99ee120e875804631d
 
 
         cv2.putText(image, str(r.tag_id + 1), (icenter[0], icenter[1] - 15),
@@ -219,7 +256,11 @@ while True:
             center = np.mean(fullPosList, axis=0)
             # print(center)
             rotation = np.mean(fullRotList) * 180 / math.pi
+<<<<<<< HEAD
             #print(rotation)
+=======
+            print(rotation)
+>>>>>>> 4bc38a244f4988d0ee58eb99ee120e875804631d
             width = 0.8255
             height = 0.6604
 
