@@ -39,9 +39,9 @@ def findtags(cap, name):
     #image = cv2.resize(image, (640,480))
     
     # <get params> v
-    camera_matrix = cam_props[camidnames[int(name)]]['cam_matrix']
-    distortion_coefficients = cam_props[camidnames[int(name)]]['dist']
-    origin_offset = cam_props[camidnames[int(name)]]['offset']
+    camera_matrix = cam_props[name]['cam_matrix']
+    distortion_coefficients = cam_props[name]['dist']
+    origin_offset = cam_props[name]['offset']
     # </get params> ^
     
     
@@ -138,7 +138,7 @@ def parse_v4l2_devices(output):
         elif '/dev/video' in line:
             video_index = line.strip().split('/')[-1]
             if current_device:
-                mappings[current_device[-4:-1]] = video_index[-1]
+                mappings[current_device[-4:-1]] = int(video_index[-1])
     return mappings
 
 def get_v4l2_device_mapping():
@@ -151,9 +151,8 @@ def get_v4l2_device_mapping():
 
 # Init cams
 cam_mapping = get_v4l2_device_mapping()
-frontcap = cv2.VideoCapture(int(cam_mapping["2.1"]))
-rightcap = cv2.VideoCapture(int(cam_mapping["2.2"]))
-all_caps = [frontcap, rightcap]
+front_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
+right_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init NetworkTables> v
 inst = ntcore.NetworkTableInstance.getDefault()
@@ -172,10 +171,9 @@ fig, ax = plt.subplots(figsize=(8, 8))
 
 while True:
     try:
-    
         fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(cap0,'0')
-        posList1, rotList1 = findtags(cap1,'1')
+        posList0, rotList0 = findtags(front_cap, "front")
+        posList1, rotList1 = findtags(right_cap, "right")
         fullPosList.extend(posList0); fullPosList.extend(posList1)
         fullRotList.extend(rotList0); fullRotList.extend(rotList1)
         
