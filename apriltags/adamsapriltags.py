@@ -1,4 +1,4 @@
-import apriltag, cv2, ntcore
+import apriltag, cv2, ntcore, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,9 +10,6 @@ cam_props = {
 'left':{'cam_matrix': np.array([[667.59437965,0,325.05798259],[0,667.62500105,222.46972227],[0,0,1]],dtype=np.float32), 'dist': np.array([[2.05714549e-01,-1.63695216e+00,1.35826526e-03,-9.93778299e-04,3.32154871e+00]], dtype = np.float32), 'offset':np.array([0,0,0],dtype=np.float32)},
 'right':{'cam_matrix': np.array([[675.54311877,0,315.7372509],[0,675.09333584,230.65457206],[0,0,1]],dtype=np.float32), 'dist': np.array([1.56483688e-01,-1.12875978e+00,4.13870402e-03,-1.00809719e-03,1.65813324e+00], dtype = np.float32), 'offset':np.array([0,0,0],dtype=np.float32)}}
 
-# <Assign correct params to correct cams> v
-camidnames = ['x','x']
-
 # Enviornment Initialization
 # I used this, but the fmap could work as well.
 FIELD_TAGS = [[0, 0, 0], [6.808597, -3.859403, (120+90)*pi/180], [7.914259, -3.221609, (120+90)*pi/180], [8.308467, 0.877443, (180+90)*pi/180], [8.308467, 1.442593, (180+90)*pi/180], [6.429883, 4.098925, (270+90)*pi/180 - 2*pi], [-6.429375, 4.098925, (270+90)*pi/180], [-8.308975, 1.442593, (0+90)*pi/180], [-8.308975, 0.877443, (0+90)*pi/180], [-7.914767, -3.221609, (60+90)*pi/180], [-6.809359, -3.859403, (60+90)*pi/180], [3.633851, -0.392049, (300+90)*pi/180], [3.633851, 0.393065, (60+90)*pi/180], [2.949321, -0.000127, (180+90)*pi/180], [-2.950083, -0.000127, (0+90)*pi/180], [-3.629533, 0.393065, (120+90)*pi/180], [-3.629533, -0.392049, (240+90)*pi/180]]
@@ -21,34 +18,6 @@ FIELD_TAGS = [[0, 0, 0], [6.808597, -3.859403, (120+90)*pi/180], [7.914259, -3.2
 FIELD_TAGS_X = [FIELD_TAG[0] for FIELD_TAG in FIELD_TAGS]
 FIELD_TAGS_Y = [FIELD_TAG[1] for FIELD_TAG in FIELD_TAGS]
 FIELD_TAGS_ID = [i for i in range(len(FIELD_TAGS))]; FIELD_TAGS_ID[0] = 'x'
-
-# </Assign correct params to correct cams> v
-def IDCams(caps):
-    while True:
-        for i in range(len(caps)):
-            cap = cv2.VideoCapture(i)
-            image = cap.read()[1]
-            cv2.imshow('cap ' + str(i), image)
-            cv2.waitKey(200)
-            camname=input('which cam is this? (l)eft,(r)ight,(f)ront,(b)ack: ')
-            if camname == 'l':
-                camname = 'left'
-            elif camname == 'r':
-                camname = 'right'
-            elif camname == 'f':
-                camname = 'front'
-            elif camname == 'b':
-                camname = 'back'
-            else:
-                print('Error. Use l, r, f, or b.')
-                break
-            cap.release()
-            camidnames[i] = camname
-            cv2.destroyAllWindows()
-        areWeDone = input('Are we done? (y or n): ').lower()
-        if areWeDone == 'y': break
-        else: pass
-# </Assign correct params to correct cams> ^
 
 options = apriltag.DetectorOptions(families='tag36h11',
                                    border=1,
@@ -159,21 +128,32 @@ def findtags(cap, name):
     cv2.imshow(name, image)
     return posList, rotList
 
+def parse_v4l2_devices(output):
+    mappings = {}
+    lines = output.split('\n')
+    current_device = None
+    for line in lines:
+        if line.strip().endswith(':'):
+            current_device = line.strip()[:-1]
+        elif '/dev/video' in line:
+            video_index = line.strip().split('/')[-1]
+            if current_device:
+                mappings[current_device[-4:-1]] = video_index[-1]
+    return mappings
 
-IDCams([0,1])
+def get_v4l2_device_mapping():
+    try:
+        output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
+        return parse_v4l2_devices(output)
+    except subprocess.CalledProcessError as e:
+        print("Error occurred")
+        return parse_v4l2_devices(e.output)
 
 # Init cams
-cap0 = cv2.VideoCapture(0)
-cap1 = cv2.VideoCapture(1)
-#cap2 = cv2.VideoCapture(2)
-#cap3 = cv2.VideoCapture(3)
-all_caps = [cap0, cap1]
-#scalefac = 1# Max range = 13ft * scalefac
-#for capn in all_caps:
-#    capn.set(3, 480 * scalefac)
-#    capn.set(4, 640 * scalefac)
-#    capn.set(5, 12) #fps
-
+cam_mapping = get_v4l2_device_mapping()
+frontcap = cv2.VideoCapture(int(cam_mapping["2.1"]))
+rightcap = cv2.VideoCapture(int(cam_mapping["2.2"]))
+all_caps = [frontcap, rightcap]
 
 # <Init NetworkTables> v
 inst = ntcore.NetworkTableInstance.getDefault()
