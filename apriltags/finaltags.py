@@ -95,11 +95,8 @@ def findtags(cap, name):
         
         
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
-
-
-        for i, offset_num in enumerate(origin_offset):
-            tvec[i] -= offset_num
-        
+    
+        # <Magic Rotate Code> v       
         c=cos(FIELD_TAGS[r.tag_id][2]);s=sin(FIELD_TAGS[r.tag_id][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
@@ -110,15 +107,14 @@ def findtags(cap, name):
             rvec[2] += pi/2
         elif camidnames[int(name)] == 'right':
             rvec[2] += -pi/2
+            
+        for i, offset_num in enumerate(origin_offset):
+            tvec[i] -= offset_num 
+            
         position = [FIELD_TAGS[r.tag_id][0] - tvec[0], FIELD_TAGS[r.tag_id][1] - tvec[2]]
-
         angle = FIELD_TAGS[r.tag_id][2] - rvec[2]
-        
+        # </Magic Rotate Code> ^
 
-        c=cos(angle);s=sin(angle)
-        tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-        # <Magic Rotate Code> ^
-        
         posList.append(position)
         rotList.append(angle)
 
