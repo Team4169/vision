@@ -219,11 +219,13 @@ while True:
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
             avg_rot = sum(fullRotList) / len(fullRotList)
 
-            # draw line segment
-            start_point = (avg_pos[0], avg_pos[1])
+            # draw each calculated position of robot, and average of all those.
+            for pos in fullPosList:
+                plt.plot(pos[0], pos[1], markersize=4, color='green')
+            plt.plot(avg_pos[0],avg_pos[1], 'rx')
+            # draw line segment showing direction robot is facing.
             end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
-            plt.plot(start_point[0],start_point[1], 'rx')
-            plt.plot([start_point[0], end_point[0]], [start_point[1], end_point[1]], 'r-')
+            plt.plot([avg_pos[0], end_point[0]], [avg_pos[1], end_point[1]], 'r-')
 
             # Update plot
             fig.canvas.draw()
