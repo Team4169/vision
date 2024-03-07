@@ -1,6 +1,11 @@
 import numpy as np
 import cv2 as cv
+<<<<<<< HEAD
 import glob, os, pickle
+=======
+import glob, os
+import pickle
+>>>>>>> 83f96681f409c7b8f4942725506b4bdd546fc148
 
 ##### FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #####
 
@@ -41,6 +46,7 @@ for image in images:
         objpoints.append(objp)
         corners2 = cv.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
         imgpoints.append(corners)
+<<<<<<< HEAD
         if('good' in str(image)):
             pass
         else:
@@ -57,6 +63,14 @@ for image in images:
                     break
     else:
         os.remove(image)
+=======
+        # Draw and display the corners
+        cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
+        cv.imshow('img', img)
+        cv.waitKey(1000)
+        if input('delete?') == 'd':
+            os.remove(image)
+>>>>>>> 83f96681f409c7b8f4942725506b4bdd546fc148
 
 cv.destroyAllWindows()
 

@@ -22,8 +22,8 @@ def printDetections(packet):
             #print(packet.detections[i].img_detection.spatialCoordinates.x, packet.detections[i].img_detection.spatialCoordinates.y, packet.detections[i].img_detection.spatialCoordinates.z)
             print(f"objHorizontal: {packet.detections[i].img_detection.spatialCoordinates.y}")
             print(f"objDistance: {packet.detections[i].img_detection.spatialCoordinates.z}")
-            sd.putNumber("objHorizontal", packet.detections[i].img_detection.spatialCoordinates.y + 0.1524)
-            sd.putNumber("objDistance", packet.detections[i].img_detection.spatialCoordinates.z + 0.2159)
+            sd.putNumber("objHorizontal", packet.detections[i].img_detection.spatialCoordinates.y)
+            sd.putNumber("objDistance", packet.detections[i].img_detection.spatialCoordinates.z)
         
 
 with OakCamera(args=args) as oak:

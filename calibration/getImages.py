@@ -1,9 +1,12 @@
 import cv2
 from time import time
  
+<<<<<<< HEAD
 
 starttime = time() 
 
+=======
+>>>>>>> 83f96681f409c7b8f4942725506b4bdd546fc148
 cap = cv2.VideoCapture(0)
  
 num = 0
