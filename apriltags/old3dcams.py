@@ -3,13 +3,13 @@ import numpy as np
 import json
 
 cam_props = {
-'back':{'cam_matrix': np.array([[649.12576246,0,349.34554103],[0,650.06837252,219.01641695],[0,0,1]],dtype=np.float32), 'dist': np.array([0.09962565,-0.92286434,-0.00491307,0.00470977,1.3384658], dtype = np.float32), 'offset':np.array([5.5,17,-0.5],dtype=np.float32)},
-'front':{'cam_matrix': np.array([[677.79747434,0,327.64289497],[0,677.8796147,227.7857478],[0,0,1]],dtype=np.float32), 'dist': np.array([ 8.96320625e-02,-8.66510276e-01,-7.79278879e-04,6.59458019e-03,1.81798852e+00], dtype = np.float32), 'offset':np.array([-7,21,.5],dtype=np.float32)},
-'left':{'cam_matrix': np.array([[667.59437965,0,325.05798259],[0,667.62500105,222.46972227],[0,0,1]],dtype=np.float32), 'dist': np.array([[2.05714549e-01,-1.63695216e+00,1.35826526e-03,-9.93778299e-04,3.32154871e+00]], dtype = np.float32), 'offset':np.array([8,19,2],dtype=np.float32)},
-'right':{'cam_matrix': np.array([[675.54311877,0,315.7372509],[0,675.09333584,230.65457206],[0,0,1]],dtype=np.float32), 'dist': np.array([1.56483688e-01,-1.12875978e+00,4.13870402e-03,-1.00809719e-03,1.65813324e+00], dtype = np.float32), 'offset':np.array([-7,20.5,-1.5],dtype=np.float32)}}
+'back':{'cam_matrix': np.array([[659.5522522254913, 0.0, 342.14593411596394], [0.0, 660.0855257028237, 233.07985632799412], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18218171362352173, -1.3943575501329653, -0.0034890991822150033, -0.003111058479543986, 2.4948141925852796]], dtype = np.float32), 'offset':np.array([5.5,17,-0.5],dtype=np.float32)},
+'front':{'cam_matrix': np.array([[650.6665701168481, 0.0, 308.11247568203765], [0.0, 649.267759423238, 230.2397074540069], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.142925049930884, -1.1502926269495592, -0.0019150557540761415, -0.00328202292619461, 1.8141065950524837]], dtype = np.float32), 'offset':np.array([-7,21,.5],dtype=np.float32)},
+'left':{'cam_matrix': np.array([[668.2138474014353, 0.0, 332.83301545896086], [0.0, 666.4860881212383, 214.33779667521517], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.22224705297101408, -1.7549821808892665, -0.005523738126667523, 0.0051301529546101616, 3.4133532108023994]], dtype = np.float32), 'offset':np.array([8,19,2],dtype=np.float32)},
+'right':{'cam_matrix': np.array([[660.6703723058181, 0.0, 321.2980455248988], [0.0, 658.6516133373474, 218.49261248405028], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18802634354539693, -1.5669527368643557, -0.0006972309753818612, -0.0018548904430247361, 3.04483663171066]], dtype = np.float32)}}
 
 # <Assign correct params to correct cams> v
-camidnames = ['x','x']
+camidnames = ['x']
 
 # Get Apritag locations
 file_path = "/home/jetson/vision/apriltags/maps/computerLab.fmap"
@@ -62,7 +62,7 @@ def findtags(cap, name):
     # <get params> v
     camera_matrix = cam_props[camidnames[int(name)]]['cam_matrix']
     distortion_coefficients = cam_props[camidnames[int(name)]]['dist']
-    origin_offset = cam_props[camidnames[int(name)]]['offset']
+    #origin_offset = cam_props[camidnames[int(name)]]['offset']
     # </get params> ^
     
     
@@ -102,7 +102,7 @@ def findtags(cap, name):
         icenter = (int(r.center[0]), int(r.center[1]))
         cv2.circle(image, icenter, 5, (0, 0, 255), -1)
 
-        U = .085725 # meters, use 3.375 for inches
+        U = 3.375 # meters, use 3.375 for inches
 
         object_points = np.array([[-U,-U,0],[U,-U,0],[U,U,0],[-U,U,0],[0,0,0]], dtype=np.float32)
         
@@ -112,24 +112,23 @@ def findtags(cap, name):
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         
         # <rotate> v
-        if camidnames[int(name)] == 'back':
-            tvec = np.array([-tvec[0],tvec[1],-tvec[2]], dtype=np.float32)
-        elif camidnames[int(name)] == 'left':
-            tvec = np.array([-tvec[2],tvec[1],tvec[0]], dtype=np.float32)
-        elif camidnames[int(name)] == 'right':
-            tvec = np.array([tvec[2],tvec[1],-tvec[0]], dtype=np.float32)
+        #if camidnames[int(name)] == 'back':
+        #    tvec = np.array([-tvec[0],tvec[1],-tvec[2]], dtype=np.float32)
+        #elif camidnames[int(name)] == 'left':
+        #    tvec = np.array([-tvec[2],tvec[1],tvec[0]], dtype=np.float32)
+        #elif camidnames[int(name)] == 'right':
+        #    tvec = np.array([tvec[2],tvec[1],-tvec[0]], dtype=np.float32)
         # </rotate> ^
         # Dont calculate Field Position, just print tvec&rvec
-        print("rvec: " + str(rvec), 'tvec: ' + str(tvec)
         
-        #for i, offset_num in enumerate(origin_offset):
-        #    tvec[i] -= offset_num
-
+        print("rvec: " + str(rvec), 'tvec: ' + str(tvec))
         
-        if r.tag_id in coordinates:
-            posList.append(
-                ([coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]])
-            )
+        
+        
+       # if r.tag_id in coordinates:
+        #    posList.append(
+         #       ([coordinates[r.tag_id][0] - tvec[0], coordinates[r.tag_id][1] - tvec[2]])
+        #    )
 
         '''
         if tvec is not None:
@@ -145,8 +144,8 @@ def findtags(cap, name):
     return posList
 
 cap0 = cv2.VideoCapture(0)
-cap1 = cv2.VideoCapture(1)
-all_caps = [cap0, cap1]
+#cap1 = cv2.VideoCapture(1)
+all_caps = [cap0]
 #scalefac = 0.5
 #for capn in all_caps:
 #    capn.set(3, 480 * scalefac)
@@ -160,7 +159,7 @@ while True:
     try:
         fullPosList = []
         fullPosList.extend(findtags(cap0,'0'))
-        fullPosList.extend(findtags(cap1,'1'))
+        #fullPosList.extend(findtags(cap1,'1'))
         totalPos=[0,0]
         
         # On roborio, weight average of fullPosList(jetson1) and fullPosList(jetson2) based on len(fullPosList)

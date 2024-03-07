@@ -1,11 +1,10 @@
 import numpy as np
 import cv2 as cv
-import glob
-import pickle
+import glob, os, pickle
 
 ##### FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #####
 
-chessboardSize = (7,10)
+chessboardSize = (7,9)
 frameSize = (640,480)
 
 
@@ -17,7 +16,7 @@ criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
 objp[:,:2] = np.mgrid[0:chessboardSize[0],0:chessboardSize[1]].T.reshape(-1,2)
 
-size_of_chessboard_squares_mm = 20
+size_of_chessboard_squares_mm = 25
 objp = objp * size_of_chessboard_squares_mm
 
 
@@ -36,16 +35,28 @@ for image in images:
     # Find the chess board corners
     ret, corners = cv.findChessboardCorners(gray, chessboardSize, None)
 
-    print(ret,end=' ')
+    
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
         corners2 = cv.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
         imgpoints.append(corners)
-        # Draw and display the corners
-        cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
-        cv.imshow('img', img)
-        cv.waitKey(1000)
+        if('good' in str(image)):
+            pass
+        else:
+            # Draw and display the corners
+            cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
+            cv.imshow('img', img)
+            while True:
+                k = cv.waitKey(20)
+                if k == ord('d'):
+                    os.remove(image)
+                    break
+                if k == ord('s'):
+                    os.rename(image, str(image).replace('img','good'))
+                    break
+    else:
+        os.remove(image)
 
 cv.destroyAllWindows()
 
@@ -59,32 +70,6 @@ pickle.dump(cameraMatrix, open("vars/cameraMatrix.pkl", "wb"))
 pickle.dump(dist, open("vars/dist.pkl", "wb"))
 
 
-##### UNDISTORTION #####
-
-img = cv.imread('images/img3.png')
-h,  w = img.shape[:2]
-newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
-
-
-# Undistort
-dst = cv.undistort(img, cameraMatrix, dist, None, newCameraMatrix)
-
-# crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
-cv.imwrite('images/caliResult1.png', dst)
-
-
-# Undistort with Remapping
-mapx, mapy = cv.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
-dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
-
-# crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
-cv.imwrite('images/caliResult2.png', dst)
-
-
 # Reprojection Error
 mean_error = 0
 
@@ -94,3 +79,15 @@ for i in range(len(objpoints)):
     mean_error += error
 
 print( "total error: {}".format(mean_error/len(objpoints)) )
+
+with open('vars/cameraMatrix.pkl', 'rb') as f:
+ data = pickle.load(f).tolist()
+
+print('CameraMatrixData:\n',data)
+
+print()
+
+with open('vars/dist.pkl', 'rb') as f:
+ data = pickle.load(f).tolist()
+
+print('vars/distData:\n',str(data))

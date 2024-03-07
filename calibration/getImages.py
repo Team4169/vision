@@ -1,6 +1,10 @@
 import cv2
+from time import time
  
-cap = cv2.VideoCapture(3)
+
+starttime = time() 
+
+cap = cv2.VideoCapture(0)
  
 num = 0
  
@@ -13,7 +17,7 @@ while cap.isOpened():
     if k == 27:
         break
     elif k == ord('s'): # wait for 's' key to save and exit
-        cv2.imwrite('./images/img' + str(num) + '.png', img)
+        cv2.imwrite('./images/img' + str(starttime) + str(num) + '.png', img)
         print("image saved!")
         num += 1
  
