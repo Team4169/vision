@@ -35,41 +35,37 @@ options = apriltag.DetectorOptions(families='tag36h11',
 detector = apriltag.Detector(options) 
 
 def findtags(cap, name):
-    
+
     image = cap.read()[1]
-    
+
     #image = cv2.resize(image, (640,480))
-    
+
     # <get params> v
     camera_matrix = cam_props[name]['cam_matrix']
     distortion_coefficients = cam_props[name]['dist']
     origin_offset = cam_props[name]['offset']
     # </get params> ^
-    
-    
+
     # <undistort> v
     h,  w = image.shape[:2]
     new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, distortion_coefficients, (w,h), 1, (w,h))
-
     mapx, mapy = cv2.initUndistortRectifyMap(camera_matrix, distortion_coefficients, None, new_camera_matrix, (w,h), 5)
     dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
-    # crop the image
-    
     x, y, w, h = roi
     dst = dst[y:y+h, x:x+w]
     image = dst
     # </undistort> ^
-    
+
     results = detector.detect(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
 
-    # loop over the AprilTag detection results
     posList = []
     rotList = []
+    # loop over the AprilTag detection results
     for r in results:
-        
+
         if r.tag_id not in range(1,17):
             continue
-        
+
         # extract the bounding box (x, y)-coordinates for the AprilTag
         # and convert each of the (x, y)-coordinate pairs to integers
         (ptA, ptB, ptC, ptD) = r.corners
@@ -77,27 +73,29 @@ def findtags(cap, name):
         iptC = (int(ptC[0]), int(ptC[1]))
         iptD = (int(ptD[0]), int(ptD[1]))
         iptA = (int(ptA[0]), int(ptA[1]))
-        
+
         # draw the bounding box of the AprilTag detection
-        cv2.line(image, iptA, iptB, (0, 255, 0), 2)
-        cv2.line(image, iptB, iptC, (0, 255, 0), 2)
-        cv2.line(image, iptD, iptA, (0, 255, 0), 2)
-        
+        cv2.line(image, iptA, iptB, (255, 0, 0), 5)
+        cv2.line(image, iptB, iptC, (255, 0, 0), 5)
+        cv2.line(image, iptC, iptD, (255, 0, 0), 5)
+        cv2.line(image, iptD, iptA, (255, 0, 0), 5)
+        cv2.line(image, iptA, iptC, (255, 0, 0), 5)
+        cv2.line(image, iptB, iptD, (255, 0, 0), 5)
+
         # draw the center (x, y)-coordinates of the AprilTag
         icenter = (int(r.center[0]), int(r.center[1]))
-        cv2.circle(image, icenter, 5, (0, 0, 255), -1)
+        cv2.circle(image, icenter, 10, (0, 0, 255), -1)
 
         #0.085725 is for meters, use 3.375 of you want inches.
         object_points = np.array([[-0.085725,-0.085725,0],[0.085725,-0.085725,0],[0.085725,0.085725,0],[-0.085725,0.085725,0],[0,0,0]], dtype=np.float32)
-        
+
         image_points = np.array([ptA,ptB,ptC,ptD,r.center], dtype=np.float32)
-        
-        
+
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
-    
+
         for i, offset_num in enumerate(origin_offset):
             tvec[i] -= offset_num
-        # <Magic Rotate Code> v       
+        # <Rotate Code> v
         c=cos(FIELD_TAGS[r.tag_id][2]);s=sin(FIELD_TAGS[r.tag_id][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
@@ -109,19 +107,15 @@ def findtags(cap, name):
         elif name == 'right':
             rvec[2] += -pi/2
             
-
-            
         position = [FIELD_TAGS[r.tag_id][0] - tvec[0], FIELD_TAGS[r.tag_id][1] - tvec[2]]
         angle = FIELD_TAGS[r.tag_id][2] - rvec[2]
-        # </Magic Rotate Code> ^
+        # </Rotate Code> ^
 
         posList.append(position)
         rotList.append(angle)
 
+        cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    
     # show the output image after AprilTag detection
     cv2.imshow(name, image)
     return posList, rotList
@@ -163,12 +157,12 @@ sd = NetworkTables.getTable("SmartDashboard")
 
 #table = inst.getTable("datatable")
 
-"""
-wPub = table.getDoubleTopic("w1").publish()
-xPub = table.getDoubleTopic("y1").publish()
-yPub = table.getDoubleTopic("x1").publish()
-rPub = table.getDoubleTopic("r1").publish()
-"""
+##Old NetworkTables Code
+##wPub = table.getDoubleTopic("w1").publish()
+##xPub = table.getDoubleTopic("y1").publish()
+##yPub = table.getDoubleTopic("x1").publish()
+##rPub = table.getDoubleTopic("r1").publish()
+
 # <Init NetworkTables> ^
 
 # Init plot
@@ -182,32 +176,34 @@ while True:
         posList1, rotList1 = findtags(right_cap, "right")
         fullPosList.extend(posList0); fullPosList.extend(posList1)
         fullRotList.extend(rotList0); fullRotList.extend(rotList1)
-        
+
         if len(fullPosList) > 0:
-            
+
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
-            """
-            wPub.set(len(avg_pos), ntcore._now())
-            xPub.set(avg_pos[0], ntcore._now())
-            yPub.set(avg_pos[1], ntcore._now())
-            rPub.set(avg_rot, ntcore._now())
-            """
+            
+            ##Old NetworkTables Code
+            ##wPub.set(len(avg_pos), ntcore._now())
+            ##xPub.set(avg_pos[0], ntcore._now())
+            ##yPub.set(avg_pos[1], ntcore._now())
+            ##rPub.set(avg_rot, ntcore._now())
+
             sd.putNumber("w1", len(avg_pos))
             sd.putNumber("x1", avg_pos[0])
             sd.putNumber("y1", avg_pos[1])
             sd.putNumber("r1", avg_rot)
+
         # <Draw Code with matplotlib> v
         if True: #DRAW
             # Clear previous robots from the plot
             ax.clear()
-            
+
             # Plot AprilTag locations
             ax.scatter(FIELD_TAGS_X, FIELD_TAGS_Y, color='b')
 
             for i in range(len(FIELD_TAGS_X)):
                 ax.annotate(FIELD_TAGS_ID[i], (FIELD_TAGS_X[i] + 0.6, FIELD_TAGS_Y[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
-            
+
             # Draw Game Field Boundary
             fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
             ax.add_patch(fieldrect)
@@ -221,10 +217,10 @@ while True:
 
             # Draw robot
             if len(fullPosList) > 0:
-                
+
                 avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
                 avg_rot = sum(fullRotList) / len(fullRotList)
-                
+
                 # draw line segment
                 start_point = (avg_pos[0], avg_pos[1])
                 end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
@@ -235,10 +231,10 @@ while True:
                 fig.canvas.draw()
                 fig.canvas.flush_events()
         # </Draw Code with matplotlib> ^
-        
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
+
     except(KeyboardInterrupt):
         front_cap.release()
         right_cap.release()
