@@ -154,7 +154,7 @@ right_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 logging.basicConfig(level=logging.DEBUG)
 
 NetworkTables.initialize()
-sd = NetworkTables.getTable("SmartDashboard")
+sd = NetworkTables.getTable("datatable")
 
 #inst = ntcore.NetworkTableInstance.getDefault()
 
