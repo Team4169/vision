@@ -94,7 +94,7 @@ def findtags(cap, name):
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
 
         for i, offset_num in enumerate(origin_offset):
-            tvec[i] -= offset_num
+            tvec[i] += offset_num
         # <Rotate Code> v
         c=cos(FIELD_TAGS[r.tag_id][2]);s=sin(FIELD_TAGS[r.tag_id][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
