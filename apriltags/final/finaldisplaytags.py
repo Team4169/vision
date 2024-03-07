@@ -221,7 +221,7 @@ while True:
 
             # draw each calculated position of robot, and average of all those.
             for pos in fullPosList:
-                plt.plot(pos[0], pos[1], markersize=4, color='green')
+                plt.plot(pos[0], pos[1], 'gx', markersize=3)
             plt.plot(avg_pos[0],avg_pos[1], 'rx')
             # draw line segment showing direction robot is facing.
             end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
