@@ -87,9 +87,8 @@ def findtags(cap, name):
         icenter = (int(r.center[0]), int(r.center[1]))
         cv2.circle(image, icenter, 5, (0, 0, 255), -1)
 
-        U = 0.085725 #In meters, use 3.375 of you want inches.
-
-        object_points = np.array([[-U,-U,0],[U,-U,0],[U,U,0],[-U,U,0],[0,0,0]], dtype=np.float32)
+        #0.085725 is for meters, use 3.375 of you want inches.
+        object_points = np.array([[-0.085725,-0.085725,0],[0.085725,-0.085725,0],[0.085725,0.085725,0],[-0.085725,0.085725,0],[0,0,0]], dtype=np.float32)
         
         image_points = np.array([ptA,ptB,ptC,ptD,r.center], dtype=np.float32)
         
@@ -103,12 +102,14 @@ def findtags(cap, name):
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
         rvec[2] += -pi/2
-        if camidnames[int(name)] == 'back':
+        if name == 'back':
             rvec[2] += pi
-        elif camidnames[int(name)] == 'left':
+        elif name == 'left':
             rvec[2] += pi/2
-        elif camidnames[int(name)] == 'right':
+        elif name == 'right':
             rvec[2] += -pi/2
+            
+
             
         position = [FIELD_TAGS[r.tag_id][0] - tvec[0], FIELD_TAGS[r.tag_id][1] - tvec[2]]
         angle = FIELD_TAGS[r.tag_id][2] - rvec[2]
@@ -185,7 +186,7 @@ while True:
         if len(fullPosList) > 0:
             
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
-            avg_rot = math.atan2(sum(math.sin(angle) for angle in fullRotList) / len(fullRotList), sum(math.cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * math.pi)
+            avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
             """
             wPub.set(len(avg_pos), ntcore._now())
             xPub.set(avg_pos[0], ntcore._now())
@@ -239,8 +240,8 @@ while True:
             break
         
     except(KeyboardInterrupt):
-        cap0.release()
-        cap1.release()
+        front_cap.release()
+        right_cap.release()
         # cap2.release()
         # cap3.release()
 
