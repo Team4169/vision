@@ -1,3 +1,5 @@
+# This code runs with front and right cams
+
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
@@ -117,6 +119,7 @@ def findtags(cap, name):
         cv2.putText(image, str(r.tag_id), (icenter[0], icenter[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # show the output image after AprilTag detection
+    cv2.putText(image, name, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     cv2.imshow(name, image)
     return posList, rotList
 
