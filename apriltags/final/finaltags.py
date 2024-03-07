@@ -1,4 +1,4 @@
-# This code runs with front and right cams
+# This code runs with back and left cams
 
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
@@ -62,7 +62,8 @@ def findtags(cap, name):
     rotList = []
     # loop over the AprilTag detection results
     for r in results:
-        if r.tag_id not in range(1,17):
+        tagId = r.tag_id + 1
+        if tagId not in range(1,17):
             continue
 
         #0.085725 is for meters, use 3.375 of you want inches.
@@ -74,7 +75,7 @@ def findtags(cap, name):
             tvec[i] += offset_num
 
         # <Rotate Code> v
-        c=cos(FIELD_TAGS[r.tag_id][2]);s=sin(FIELD_TAGS[r.tag_id][2])
+        c=cos(FIELD_TAGS[tagId][2]);s=sin(FIELD_TAGS[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
         rvec[2] += -pi/2
@@ -85,8 +86,8 @@ def findtags(cap, name):
         elif name == 'right':
             rvec[2] += -pi/2
 
-        position = [FIELD_TAGS[r.tag_id][0] - tvec[0], FIELD_TAGS[r.tag_id][1] - tvec[2]]
-        angle = FIELD_TAGS[r.tag_id][2] - rvec[2]
+        position = [FIELD_TAGS[tagId][0] - tvec[0], FIELD_TAGS[tagId][1] - tvec[2]]
+        angle = FIELD_TAGS[tagId][2] - rvec[2]
         # </Rotate Code> ^
 
         posList.append(position)
@@ -117,8 +118,8 @@ def get_v4l2_device_mapping():
 
 # Init cams
 cam_mapping = get_v4l2_device_mapping()
-front_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
-right_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
+back_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
+left_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init NetworkTables> v
 
@@ -142,8 +143,8 @@ sd = NetworkTables.getTable("datatable")
 while True:
     try:
         fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(front_cap, "front")
-        posList1, rotList1 = findtags(right_cap, "right")
+        posList0, rotList0 = findtags(back_cap, "back")
+        posList1, rotList1 = findtags(left_cap, "left")
         fullPosList.extend(posList0); fullPosList.extend(posList1)
         fullRotList.extend(rotList0); fullRotList.extend(rotList1)
 
@@ -164,8 +165,8 @@ while True:
             sd.putNumber("r1", avg_rot)
 
     except(KeyboardInterrupt):
-        front_cap.release()
-        right_cap.release()
+        back_cap.release()
+        left_cap.release()
 
         print("/nCams Off. Program ended.")
         cv2.destroyAllWindows()
