@@ -181,7 +181,7 @@ while True:
 
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
-            
+
             ##Old NetworkTables Code
             ##wPub.set(len(avg_pos), ntcore._now())
             ##xPub.set(avg_pos[0], ntcore._now())
@@ -194,42 +194,40 @@ while True:
             sd.putNumber("r1", avg_rot)
 
         # <Draw Code with matplotlib> v
-        if True: #DRAW
-            # Clear previous robots from the plot
-            ax.clear()
+        ax.clear()
 
-            # Plot AprilTag locations
-            ax.scatter(FIELD_TAGS_X, FIELD_TAGS_Y, color='b')
+        # Plot AprilTag locations
+        ax.scatter(FIELD_TAGS_X, FIELD_TAGS_Y, color='b')
 
-            for i in range(len(FIELD_TAGS_X)):
-                ax.annotate(FIELD_TAGS_ID[i], (FIELD_TAGS_X[i] + 0.6, FIELD_TAGS_Y[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
+        for i in range(len(FIELD_TAGS_X)):
+            ax.annotate(FIELD_TAGS_ID[i], (FIELD_TAGS_X[i] + 0.6, FIELD_TAGS_Y[i] - 0.15), textcoords="offset points", xytext=(0, 0), ha='center')
 
-            # Draw Game Field Boundary
-            fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
-            ax.add_patch(fieldrect)
+        # Draw Game Field Boundary
+        fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
+        ax.add_patch(fieldrect)
 
-            # Adjusting plot limits
-            ax.set_xlim(-9, 9)
-            ax.set_ylim(-4.5, 4.5)
-            ax.set_aspect('equal', adjustable='box')
-            ax.set_title('2024 Game Field Positioning Simulation')
-            ax.grid(False)
+        # Adjusting plot limits
+        ax.set_xlim(-9, 9)
+        ax.set_ylim(-4.5, 4.5)
+        ax.set_aspect('equal', adjustable='box')
+        ax.set_title('2024 Game Field Positioning Simulation')
+        ax.grid(False)
 
-            # Draw robot
-            if len(fullPosList) > 0:
+        # Draw robot
+        if len(fullPosList) > 0:
 
-                avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
-                avg_rot = sum(fullRotList) / len(fullRotList)
+            avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
+            avg_rot = sum(fullRotList) / len(fullRotList)
 
-                # draw line segment
-                start_point = (avg_pos[0], avg_pos[1])
-                end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
-                plt.plot(start_point[0],start_point[1], 'rx')
-                plt.plot([start_point[0], end_point[0]], [start_point[1], end_point[1]], 'r-')
+            # draw line segment
+            start_point = (avg_pos[0], avg_pos[1])
+            end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
+            plt.plot(start_point[0],start_point[1], 'rx')
+            plt.plot([start_point[0], end_point[0]], [start_point[1], end_point[1]], 'r-')
 
-                # Update plot
-                fig.canvas.draw()
-                fig.canvas.flush_events()
+            # Update plot
+            fig.canvas.draw()
+            fig.canvas.flush_events()
         # </Draw Code with matplotlib> ^
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -238,8 +236,6 @@ while True:
     except(KeyboardInterrupt):
         front_cap.release()
         right_cap.release()
-        # cap2.release()
-        # cap3.release()
 
         print("/nCams Off. Program ended.")
         cv2.destroyAllWindows()
