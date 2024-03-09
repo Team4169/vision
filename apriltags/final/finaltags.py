@@ -3,7 +3,7 @@
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
-from networktables import NetworkTables
+import ntcore
 import logging
 
 cam_props = {
@@ -125,18 +125,15 @@ left_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 logging.basicConfig(level=logging.DEBUG)
 
-NetworkTables.initialize()
-sd = NetworkTables.getTable("datatable")
+inst = ntcore.NetworkTableInstance.getDefault()
 
-#inst = ntcore.NetworkTableInstance.getDefault()
-
-#table = inst.getTable("datatable")
+table = inst.getTable("SmartDashboard")
 
 ##Old NetworkTables Code
-##wPub = table.getDoubleTopic("w1").publish()
-##xPub = table.getDoubleTopic("y1").publish()
-##yPub = table.getDoubleTopic("x1").publish()
-##rPub = table.getDoubleTopic("r1").publish()
+wPub = table.getDoubleTopic("w1").publish()
+xPub = table.getDoubleTopic("y1").publish()
+yPub = table.getDoubleTopic("x1").publish()
+rPub = table.getDoubleTopic("r1").publish()
 
 # <Init NetworkTables> ^
 
@@ -154,15 +151,11 @@ while True:
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
             ##Old NetworkTables Code
-            ##wPub.set(len(avg_pos), ntcore._now())
-            ##xPub.set(avg_pos[0], ntcore._now())
-            ##yPub.set(avg_pos[1], ntcore._now())
-            ##rPub.set(avg_rot, ntcore._now())
+            wPub.set(len(avg_pos))
+            xPub.set(avg_pos[0])
+            yPub.set(avg_pos[1])
+            rPub.set(avg_rot)
 
-            sd.putNumber("w1", len(avg_pos))
-            sd.putNumber("x1", avg_pos[0])
-            sd.putNumber("y1", avg_pos[1])
-            sd.putNumber("r1", avg_rot)
 
     except(KeyboardInterrupt):
         back_cap.release()
