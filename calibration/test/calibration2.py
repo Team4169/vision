@@ -82,4 +82,36 @@ while running:
           os.remove(image)
 
   cv.destroyAllWindows()
+
+  #calibration
+
+  ret, cameraMatrix, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, frameSize, None, None)
+
+  # Save the camera calibration result for later use
+  pickle.dump(cameraMatrix, open("calibrationFiles/cameraMatrix.pkl", "wb"))
+  pickle.dump(dist, open("calibrationFiles/dist.pkl", "wb"))
+
+
+  # Reprojection Error
+  mean_error = 0
+
+  for i in range(len(objpoints)):
+      imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], cameraMatrix, dist)
+      error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+      mean_error += error
+
+  print("total error: {}".format(mean_error/len(objpoints)) )
+
+  with open('calibrationFiles/cameraMatrix.pkl', 'rb') as f:
+    camMatrix = pickle.load(f).tolist()
+
+  print("CameraMatrixData:")
+  print(f"np.array({camMatrix}, dtype = np.float32)")
+  print()
+
+  with open('calibrationFiles/dist.pkl', 'rb') as f:
+    dist = pickle.load(f).tolist()
+
+  print("distData:")
+  print(f"np.array({dist[0]}, dtype = np.float32)")
   print("done loop")
