@@ -5,13 +5,21 @@ from math import sin, cos, atan2, pi
 import numpy as np
 import ntcore
 import logging
+import pickle
+from portHandler import get_v4l2_device_mapping
 
+pickled_cam_props = {}
+with open ("/vision/apriltags/calibration/test/calibrationFiles/cameraMatrix.pkl", 'rb') as f:
+    pickled_cam_props = pickle.load(f)
 cam_props = {
 'back':{'cam_matrix': np.array([[659.5522522254913, 0.0, 342.14593411596394], [0.0, 660.0855257028237, 233.07985632799412], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18218171362352173, -1.3943575501329653, -0.0034890991822150033, -0.003111058479543986, 2.4948141925852796]], dtype = np.float32), 'offset':np.array([0.3048,0.4572,0.22225],dtype=np.float32)},
 'front':{'cam_matrix': np.array([[650.6665701168481, 0.0, 308.11247568203765], [0.0, 649.267759423238, 230.2397074540069], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.142925049930884, -1.1502926269495592, -0.0019150557540761415, -0.00328202292619461, 1.8141065950524837]], dtype = np.float32), 'offset':np.array([0.1778,0.4572,0.19685],dtype=np.float32)},
 'left':{'cam_matrix': np.array([[668.2138474014353, 0.0, 332.83301545896086], [0.0, 666.4860881212383, 214.33779667521517], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.22224705297101408, -1.7549821808892665, -0.005523738126667523, 0.0051301529546101616, 3.4133532108023994]], dtype = np.float32), 'offset':np.array([-0.14605,0.4572,0.3302],dtype=np.float32)},
 'right':{'cam_matrix': np.array([[660.6703723058181, 0.0, 321.2980455248988], [0.0, 658.6516133373474, 218.49261248405028], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18802634354539693, -1.5669527368643557, -0.0006972309753818612, -0.0018548904430247361, 3.04483663171066]], dtype = np.float32), 'offset':np.array([-0.13335,0.4572,0.2413],dtype=np.float32)}}
 
+print(pickled_cam_props)
+print(cam_props)
+quit()
 # Enviornment Initialization
 # I used this, but the fmap could work as well.
 FIELD_TAGS = [[0, 0, 0], [6.808597, -3.859403, (120+90)*pi/180], [7.914259, -3.221609, (120+90)*pi/180], [8.308467, 0.877443, (180+90)*pi/180], [8.308467, 1.442593, (180+90)*pi/180], [6.429883, 4.098925, (270+90)*pi/180 - 2*pi], [-6.429375, 4.098925, (270+90)*pi/180], [-8.308975, 1.442593, (0+90)*pi/180], [-8.308975, 0.877443, (0+90)*pi/180], [-7.914767, -3.221609, (60+90)*pi/180], [-6.809359, -3.859403, (60+90)*pi/180], [3.633851, -0.392049, (300+90)*pi/180], [3.633851, 0.393065, (60+90)*pi/180], [2.949321, -0.000127, (180+90)*pi/180], [-2.950083, -0.000127, (0+90)*pi/180], [-3.629533, 0.393065, (120+90)*pi/180], [-3.629533, -0.392049, (240+90)*pi/180]]
@@ -95,27 +103,6 @@ def findtags(cap, name):
 
     return posList, rotList
 
-def parse_v4l2_devices(output):
-    mappings = {}
-    lines = output.split('\n')
-    current_device = None
-    for line in lines:
-        if line.strip().endswith(':'):
-            current_device = line.strip()[:-1]
-        elif '/dev/video' in line:
-            video_index = line.strip().split('/')[-1]
-            if current_device:
-                mappings[current_device[-4:-1]] = int(video_index[-1])
-    return mappings
-
-def get_v4l2_device_mapping():
-    try:
-        output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
-        return parse_v4l2_devices(output)
-    except subprocess.CalledProcessError as e:
-        print("Error occurred")
-        return parse_v4l2_devices(e.output)
-
 # Init cams
 cam_mapping = get_v4l2_device_mapping()
 back_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
@@ -129,7 +116,6 @@ inst = ntcore.NetworkTableInstance.getDefault()
 
 table = inst.getTable("SmartDashboard")
 
-##Old NetworkTables Code
 wPub = table.getDoubleTopic("w1").publish()
 xPub = table.getDoubleTopic("y1").publish()
 yPub = table.getDoubleTopic("x1").publish()
@@ -150,8 +136,8 @@ while True:
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
-            ##Old NetworkTables Code
-            wPub.set(len(avg_pos))
+            # Set Network table values (Weight, Xposition, Yposition, and Rotation)
+            wPub.set(len(fullPosList))
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
             rPub.set(avg_rot)
