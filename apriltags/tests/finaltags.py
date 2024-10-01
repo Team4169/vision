@@ -9,8 +9,9 @@ import pickle
 from portHandler import get_v4l2_device_mapping
 
 pickled_cam_props = {}
-with open ("/vision/apriltags/calibration/test/calibrationFiles/cameraMatrix.pkl", 'rb') as f:
-    pickled_cam_props = pickle.load(f)
+with open ("/vision/apriltags/calibration/camConfig/camConfig.pkl", 'rb') as f:
+    cam_props_from_pickle = pickle.load(f[0])
+    pickled_cam_props = pickle.load(f[1])
 cam_props = {
 'back':{'cam_matrix': np.array([[659.5522522254913, 0.0, 342.14593411596394], [0.0, 660.0855257028237, 233.07985632799412], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18218171362352173, -1.3943575501329653, -0.0034890991822150033, -0.003111058479543986, 2.4948141925852796]], dtype = np.float32), 'offset':np.array([0.3048,0.4572,0.22225],dtype=np.float32)},
 'front':{'cam_matrix': np.array([[650.6665701168481, 0.0, 308.11247568203765], [0.0, 649.267759423238, 230.2397074540069], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.142925049930884, -1.1502926269495592, -0.0019150557540761415, -0.00328202292619461, 1.8141065950524837]], dtype = np.float32), 'offset':np.array([0.1778,0.4572,0.19685],dtype=np.float32)},
