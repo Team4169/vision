@@ -58,7 +58,7 @@ def findtags(cap, name):
     h,  w = image.shape[:2]
     new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, distortion_coefficients, (w,h), 1, (w,h))
     mapx, mapy = cv2.initUndistortRectifyMap(camera_matrix, distortion_coefficients, None, new_camera_matrix, (w,h), 5)
-    dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+    dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR) #faster than undistort.
     x, y, w, h = roi
     dst = dst[y:y+h, x:x+w]
     image = dst

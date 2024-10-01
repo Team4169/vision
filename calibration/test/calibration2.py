@@ -98,9 +98,10 @@ while running:
   for i in range(len(objpoints)):
       imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], cameraMatrix, dist)
       error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+      print(error)
       mean_error += error
 
-  print("total error: {}".format(mean_error/len(objpoints)) )
+  print("total error: {}".format(mean_error/len(objpoints)))
 
   with open('calibrationFiles/cameraMatrix.pkl', 'rb') as f:
     camMatrix = pickle.load(f).tolist()
@@ -114,4 +115,7 @@ while running:
 
   print("distData:")
   print(f"np.array({dist[0]}, dtype = np.float32)")
+
+
+  
   print("done loop")
