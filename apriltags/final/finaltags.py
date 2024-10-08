@@ -1,4 +1,4 @@
-# This code runs with back and left cams
+# This code runs with front and right cams
 
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
@@ -118,8 +118,8 @@ def get_v4l2_device_mapping():
 
 # Init cams
 cam_mapping = get_v4l2_device_mapping()
-back_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
-left_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
+front_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
+right_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init NetworkTables> v
 
@@ -131,35 +131,37 @@ table = inst.getTable("SmartDashboard")
 
 ##Old NetworkTables Code
 wPub = table.getDoubleTopic("w1").publish()
-xPub = table.getDoubleTopic("y1").publish()
-yPub = table.getDoubleTopic("x1").publish()
+xPub = table.getDoubleTopic("x1").publish()
+yPub = table.getDoubleTopic("y1").publish()
 rPub = table.getDoubleTopic("r1").publish()
+
+inst.startClient4("example client")
+inst.setServerTeam(4169)
+inst.startDSClient()
 
 # <Init NetworkTables> ^
 
 while True:
     try:
         fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(back_cap, "back")
-        posList1, rotList1 = findtags(left_cap, "left")
+        posList0, rotList0 = findtags(front_cap, "front")
+        posList1, rotList1 = findtags(right_cap, "right")
         fullPosList.extend(posList0); fullPosList.extend(posList1)
         fullRotList.extend(rotList0); fullRotList.extend(rotList1)
-
         if len(fullPosList) > 0:
 
             avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
-            ##Old NetworkTables Code
-            wPub.set(len(avg_pos))
+            wPub.set(len(fullPosList))
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
             rPub.set(avg_rot)
 
 
     except(KeyboardInterrupt):
-        back_cap.release()
-        left_cap.release()
+        front_cap.release()
+        right_cap.release()
 
         print("/nCams Off. Program ended.")
         cv2.destroyAllWindows()

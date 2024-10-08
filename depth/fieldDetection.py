@@ -11,6 +11,7 @@ table = inst.getTable("SmartDashboard")
 
 objHor = table.getDoubleTopic("objHorizontal").publish()
 objDist = table.getDoubleTopic("objDistance").publish()
+detectingNote = table.getBooleanTopic("detectingNote").publish()
 inst.startClient4("example client")
 inst.setServerTeam(4169)
 inst.startDSClient()
@@ -20,20 +21,20 @@ parser.add_argument("-conf", "--config", help="Trained YOLO json config path", d
 args = ArgsParser.parseArgs(parser)
 
 def printDetections(packet):
-    print(len(packet.detections))
+    bestDetection = [1000000,1000000]
     for i in range(len(packet.detections)):
         if packet.detections[i].label_str == "Class_1":
-            #print(packet.detections[i].confidence)
-            #print(packet.detections[i].label_str)
-            #print(packet.detections[i].img_detection.spatialCoordinates.x, packet.detections[i].img_detection.spatialCoordinates.y, packet.detections[i].img_detection.spatialCoordinates.z)
-            print(f"objHorizontal: {packet.detections[i].img_detection.spatialCoordinates.y}")
-            print(f"objDistance: {packet.detections[i].img_detection.spatialCoordinates.z}")
-            objHor.set(packet.detections[i].img_detection.spatialCoordinates.y)
-            objDist.set(packet.detections[i].img_detection.spatialCoordinates.z)
-        
+            if bestDetection[0] ** 2 + bestDetection[1] ** 2 > (packet.detections[i].img_detection.spatialCoordinates.y) ** 2 + (packet.detections[i].img_detection.spatialCoordinates.z) ** 2:
+            	bestDetection = [packet.detections[i].img_detection.spatialCoordinates.y, packet.detections[i].img_detection.spatialCoordinates.z]
+    if bestDetection != [1000000,1000000]:
+        objHor.set(bestDetection[0])
+        objDist.set(bestDetection[1])
+        print(f"objHorizontal: {bestDetection[0]}")
+        print(f"objDistance: {bestDetection[1]}")
+    detectingNote.set(len(packet.detections) != 0)
 
 with OakCamera(args=args) as oak:
-    color = oak.create_camera('color')
+    color = oak.create_camera('color', fps=6)
     nn = oak.create_nn(args['config'], color, nn_type='yolo', spatial=True)
     visualizer = oak.visualize(nn.out.passthrough, callback=printDetections)
     #visualizer = oak.visualize(nn.out.passthrough, fps=True)

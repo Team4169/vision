@@ -99,7 +99,7 @@ while running:
         print("Bad try again")
         
   with open(f"camConfig/camConfig{cam_name}.pkl", 'wb') as f: # Creates pkl file and puts our data in it
-    pickle.dump([f"np.array({cameraMatrix}, dtype = np.float32)", f"np.array({dist}, dtype = np.float32)",f"np.array({offset}, dtype = np.float32)"], f)
+    pickle.dump([np.array(cameraMatrix, dtype = np.float32), np.array(dist, dtype = np.float32), np.array(offset, dtype = np.float32)], f)
 
   with open(f"camConfig/camConfig{cam_name}.pkl", 'rb') as f: # reopen and read the pkl file to make sure it looks good
     camConfig = pickle.load(f)

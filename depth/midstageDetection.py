@@ -22,7 +22,7 @@ args = ArgsParser.parseArgs(parser)
 def printDetections(packet):
     detection = False
     for i in range(len(packet.detections)):
-        if packet.detections[i].label_str == "Class_1" and packet.detections[i].confidence > 0.7:
+        if packet.detections[i].label_str == "Class_1":
             print(packet.detections[i].bbox)
             print("detecting")
             detection = True        
@@ -33,6 +33,7 @@ def printDetections(packet):
 with OakCamera(args=args) as oak:
     color = oak.create_camera('color', resolution=100)
     nn = oak.create_nn(args['config'], color, nn_type='yolo')
+    nn.config_nn(conf_threshold=0.5)
     visualizer = oak.visualize(nn.out.passthrough, callback=printDetections, fps = True)
     #visualizer = oak.visualize(nn.out.passthrough, fps=True)
     oak.start(blocking=True)
