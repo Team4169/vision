@@ -4,9 +4,9 @@ import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
 import ntcore
-import logging
 import pickle
 
+# Initialize Constants (cam_props and field_tags)
 
 cam_props = {}
 for cam_name in {"Front", "Back", "Left", "Right"}:
@@ -14,16 +14,8 @@ for cam_name in {"Front", "Back", "Left", "Right"}:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-
-cam_props_OLD = { # can be deleted soon (after recalibrating cameras)
-'back':{'cam_matrix': np.array([[659.5522522254913, 0.0, 342.14593411596394], [0.0, 660.0855257028237, 233.07985632799412], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18218171362352173, -1.3943575501329653, -0.0034890991822150033, -0.003111058479543986, 2.4948141925852796]], dtype = np.float32), 'offset':np.array([0.3048,0.4572,0.22225],dtype=np.float32)},
-'front':{'cam_matrix': np.array([[650.6665701168481, 0.0, 308.11247568203765], [0.0, 649.267759423238, 230.2397074540069], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.142925049930884, -1.1502926269495592, -0.0019150557540761415, -0.00328202292619461, 1.8141065950524837]], dtype = np.float32), 'offset':np.array([0.1778,0.4572,0.19685],dtype=np.float32)},
-'left':{'cam_matrix': np.array([[668.2138474014353, 0.0, 332.83301545896086], [0.0, 666.4860881212383, 214.33779667521517], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.22224705297101408, -1.7549821808892665, -0.005523738126667523, 0.0051301529546101616, 3.4133532108023994]], dtype = np.float32), 'offset':np.array([-0.14605,0.4572,0.3302],dtype=np.float32)},
-'right':{'cam_matrix': np.array([[660.6703723058181, 0.0, 321.2980455248988], [0.0, 658.6516133373474, 218.49261248405028], [0.0, 0.0, 1.0]],dtype=np.float32), 'dist': np.array([[0.18802634354539693, -1.5669527368643557, -0.0006972309753818612, -0.0018548904430247361, 3.04483663171066]], dtype = np.float32), 'offset':np.array([-0.13335,0.4572,0.2413],dtype=np.float32)}}
-
-# Enviornment Initialization
 with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
-    FIELD_TAGS = pickle.load(f)
+    field_tags = pickle.load(f)
 
 options = apriltag.DetectorOptions(families='tag36h11',
                                    border=1,
@@ -42,8 +34,6 @@ def findtags(cap, name):
 
     image = cap.read()[1]
 
-    #image = cv2.resize(image, (640,480))
-
     # <get params> v
     camera_matrix = cam_props[name]['cam_matrix']
     distortion_coefficients = cam_props[name]['dist']
@@ -54,7 +44,7 @@ def findtags(cap, name):
     h, w = image.shape[:2]
     new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, distortion_coefficients, (w,h), 1, (w,h))
     mapx, mapy = cv2.initUndistortRectifyMap(camera_matrix, distortion_coefficients, None, new_camera_matrix, (w,h), 5)
-    dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR) #faster than undistort.
+    dst = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR) # faster than undistort.
     x, y, w, h = roi
     dst = dst[y:y+h, x:x+w]
     image = dst
@@ -64,13 +54,13 @@ def findtags(cap, name):
 
     posList = []
     rotList = []
-    # loop over the AprilTag detection results
+    # loop over the AprilTag detection results, do math to find robots position and rotation and append to posList and rotList.
     for r in results:
         tagId = r.tag_id + 1
-        if tagId not in range(1,17):
+        if tagId not in range(1,17): # Competition only uses tags 1 to 16, if another one is found ignore it.
             continue
 
-        #0.085725 is for meters, use 3.375 of you want inches.
+        # 0.085725 is for meters, use 3.375 of you want inches. This number is the size of the tags, change it if the tag size changes.
         object_points = np.array([[-0.085725,-0.085725,0],[0.085725,-0.085725,0],[0.085725,0.085725,0],[-0.085725,0.085725,0],[0,0,0]], dtype=np.float32)
         image_points = np.array([r.corners[0],r.corners[1],r.corners[2],r.corners[3],r.center], dtype=np.float32)
 
@@ -79,7 +69,8 @@ def findtags(cap, name):
             tvec[i] += offset_num
 
         # <Rotate Code> v
-        c=cos(FIELD_TAGS[tagId][2]);s=sin(FIELD_TAGS[tagId][2])
+        # Based on the tag that we see, do math to find out where the robot must be to see that tag.
+        c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
         rvec[2] += -pi/2
@@ -90,8 +81,8 @@ def findtags(cap, name):
         elif name == 'right':
             rvec[2] += -pi/2
 
-        position = [FIELD_TAGS[tagId][0] - tvec[0], FIELD_TAGS[tagId][1] - tvec[2]]
-        angle = FIELD_TAGS[tagId][2] - rvec[2]
+        position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
+        angle = field_tags[tagId][2] - rvec[2]
         # </Rotate Code> ^
 
         posList.append(position)
@@ -127,15 +118,13 @@ left_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init NetworkTables> v
 
-logging.basicConfig(level=logging.DEBUG)
-
 inst = ntcore.NetworkTableInstance.getDefault()
 
 table = inst.getTable("SmartDashboard")
 
 wPub = table.getDoubleTopic("w1").publish()
-xPub = table.getDoubleTopic("y1").publish()
-yPub = table.getDoubleTopic("x1").publish()
+xPub = table.getDoubleTopic("x1").publish()
+yPub = table.getDoubleTopic("y1").publish()
 rPub = table.getDoubleTopic("r1").publish()
 
 # <Init NetworkTables> ^
