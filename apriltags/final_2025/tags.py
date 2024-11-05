@@ -117,7 +117,6 @@ elif jetsonID == 2:
     cam_1_name = "Left"
 else:
     raise Exception('Invalid Jetson ID')
-
 cam_mapping = get_v4l2_device_mapping()
 cam_0 = cv2.VideoCapture(int(cam_mapping["2.1"]))
 cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
@@ -136,26 +135,21 @@ with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as
 # <Init NetworkTables> v
 if enable_network_tables:
     inst = ntcore.NetworkTableInstance.getDefault()
-
     table = inst.getTable("SmartDashboard")
 
     wPub = table.getDoubleTopic("w1").publish()
     xPub = table.getDoubleTopic("x1").publish()
     yPub = table.getDoubleTopic("y1").publish()
     rPub = table.getDoubleTopic("r1").publish()
-
 # <Init NetworkTables> ^
 
-del getJetson
-del parse_v4l2_devices
-del get_v4l2_device_mapping
-# Delete these functions from memory because they are no longer needed
+del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed
 
-START_TIME = time()
-frameCount = 0
+start_time = time()
+frame_count = 0
 while True:
-    frameCount += 1
-    print('FPS:',frameCount/(time()-START_TIME))
+    frame_count += 1
+    print('FPS:',frame_count/(time()-start_time))
     try:
         fullPosList, fullRotList = [], []
         posList0, rotList0 = findtags(cam_0, cam_0_name)

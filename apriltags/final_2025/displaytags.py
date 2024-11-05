@@ -1,35 +1,26 @@
-# This code runs with back and left cams
-
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
 import ntcore
 import pickle
+from getmac import get_mac_address
+from time import time
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# Initialize Constants (cam_props and field_tags)
-cam_props = {}
-for cam_name in {"Front", "Back", "Left", "Right"}:
-    with open (f"/home/aresuser/vision/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
-        f_data = pickle.load(f)
-        cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
+enable_network_tables = False
 
-with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
-    field_tags = pickle.load(f)
-
-options = apriltag.DetectorOptions(families='tag36h11',
-                                   border=1,
-                                   nthreads=4,
-                                   quad_decimate=0.0,
-                                   quad_blur=0.0,
-                                   refine_edges=True,
-                                   refine_decode=False,
-                                   refine_pose=False,
-                                   debug=True,
-                                   quad_contours=False)
-
-detector = apriltag.Detector(options)
+detector = apriltag.Detector(
+apriltag.DetectorOptions(families='tag36h11',
+                         border=1,
+                         nthreads=4,
+                         quad_decimate=0.0,
+                         quad_blur=0.0,
+                         refine_edges=True,
+                         refine_decode=False,
+                         refine_pose=False,
+                         debug=True,
+                         quad_contours=False))
 
 def findtags(cap, name):
 
@@ -86,7 +77,7 @@ def findtags(cap, name):
         for i, offset_num in enumerate(origin_offset):
             tvec[i] += offset_num
         # <Rotate Code> v
-        # Based on the tag that we see, do math to find out where the robot must be to see that tag.
+        # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
         c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
 
@@ -112,6 +103,10 @@ def findtags(cap, name):
     cv2.imshow(name, image)
     return posList, rotList
 
+def getJetson():
+    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2}
+    return MACdict.get(get_mac_address(), None) # Returns None if invalid Jetson ID
+
 def parse_v4l2_devices(output):
     mappings = {}
     lines = output.split('\n')
@@ -133,33 +128,59 @@ def get_v4l2_device_mapping():
         print("Error occurred")
         return parse_v4l2_devices(e.output)
 
-# Init cams
+jetsonID = getJetson()
+cam_0_name = ''
+cam_1_name = ''
+# Initialize cams with correct Jetson
+if jetsonID == 1:
+    cam_0_name = "Front"
+    cam_1_name = "Right"
+elif jetsonID == 2:
+    cam_0_name = "Back"
+    cam_1_name = "Left"
+else:
+    raise Exception('Invalid Jetson ID')
 cam_mapping = get_v4l2_device_mapping()
-back_cap = cv2.VideoCapture(int(cam_mapping["2.1"]))
-left_cap = cv2.VideoCapture(int(cam_mapping["2.2"]))
+cam_0 = cv2.VideoCapture(int(cam_mapping["2.1"]))
+cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
+
+# <Init Constants> v (cam_props and field_tags)
+cam_props = {}
+for cam_name in {cam_0_name, cam_1_name}:
+    with open (f"/home/aresuser/vision/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
+        f_data = pickle.load(f)
+        cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
+
+with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
+    field_tags = pickle.load(f)
+# <Init Constants> ^
 
 # <Init NetworkTables> v
+if enable_network_tables:
+    inst = ntcore.NetworkTableInstance.getDefault()
+    table = inst.getTable("SmartDashboard")
 
-inst = ntcore.NetworkTableInstance.getDefault()
-
-table = inst.getTable("SmartDashboard")
-
-wPub = table.getDoubleTopic("w1").publish()
-xPub = table.getDoubleTopic("x1").publish()
-yPub = table.getDoubleTopic("y1").publish()
-rPub = table.getDoubleTopic("r1").publish()
-
+    wPub = table.getDoubleTopic("w1").publish()
+    xPub = table.getDoubleTopic("x1").publish()
+    yPub = table.getDoubleTopic("y1").publish()
+    rPub = table.getDoubleTopic("r1").publish()
 # <Init NetworkTables> ^
+
+del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed
 
 # Init plot
 plt.ion()
 fig, ax = plt.subplots(figsize=(8, 8))
 
+start_time = time()
+frame_count = 0
 while True:
+    frame_count += 1
+    print('FPS:',frame_count/(time()-start_time))
     try:
         fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(back_cap, "Back")
-        posList1, rotList1 = findtags(left_cap, "Left")
+        posList0, rotList0 = findtags(cam_0, cam_0_name)
+        posList1, rotList1 = findtags(cam_1, cam_1_name)
         fullPosList.extend(posList0); fullPosList.extend(posList1)
         fullRotList.extend(rotList0); fullRotList.extend(rotList1)
 
@@ -169,10 +190,11 @@ while True:
             avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
             # Set Network table values (Weight, Xposition, Yposition, and Rotation)
-            wPub.set(len(fullPosList))
-            xPub.set(avg_pos[0])
-            yPub.set(avg_pos[1])
-            rPub.set(avg_rot)
+            if enable_network_tables:
+                wPub.set(len(fullPosList))
+                xPub.set(avg_pos[0])
+                yPub.set(avg_pos[1])
+                rPub.set(avg_rot)
 
         # <Draw Code with matplotlib> v
         ax.clear()
