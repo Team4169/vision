@@ -62,19 +62,20 @@ def findtags(cap, name):
         # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
         c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-
-        rvec[2] += -pi/2
-        if name == 'back':
-            rvec[2] += pi
-        elif name == 'left':
+        
+        if name == 'front':
+            rvec[2] += -pi/2
+        elif name == 'back':
             rvec[2] += pi/2
         elif name == 'right':
-            rvec[2] += -pi/2
+            rvec[2] += -pi
+        #elif name == 'left':
+        #    rvec[2] += 0
 
         position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
-        angle = field_tags[tagId][2] - rvec[2]
+        angle = float((field_tags[tagId][2] - rvec[2])[0])
         # </Rotate Code> ^
-
+        
         posList.append(position)
         rotList.append(angle)
 
@@ -150,30 +151,23 @@ frame_count = 0
 while True:
     frame_count += 1
     print('FPS:',frame_count/(time()-start_time))
-    try:
-        fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(cam_0, cam_0_name)
-        posList1, rotList1 = findtags(cam_1, cam_1_name)
-        fullPosList.extend(posList0); fullPosList.extend(posList1)
-        fullRotList.extend(rotList0); fullRotList.extend(rotList1)
+    
+    posList0, rotList0 = findtags(cam_0, cam_0_name)
+    posList1, rotList1 = findtags(cam_1, cam_1_name)
+    fullPosList = posList0 + posList1
+    fullRotList = rotList0 + rotList1
 
-        if len(fullPosList) > 0:
+    if len(fullPosList) > 0:
+        avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
+        avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
-            avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
-            avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
+        # Set Network table values (Weight, Xposition, Yposition, and Rotation)
+        if enable_network_tables:
+            wPub.set(len(fullPosList))
+            xPub.set(avg_pos[0])
+            yPub.set(avg_pos[1])
+            rPub.set(avg_rot)
+    
 
-            # Set Network table values (Weight, Xposition, Yposition, and Rotation)
-            if enable_network_tables:
-                wPub.set(len(fullPosList))
-                xPub.set(avg_pos[0])
-                yPub.set(avg_pos[1])
-                rPub.set(avg_rot)
-
-
-    except(KeyboardInterrupt):
-        back_cap.release()
-        left_cap.release()
-
-        print("/nCams Off. Program ended.")
-        cv2.destroyAllWindows()
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break

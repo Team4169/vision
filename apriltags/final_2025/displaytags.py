@@ -80,17 +80,18 @@ def findtags(cap, name):
         # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
         c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-
-        rvec[2] += -pi/2
-        if name == 'back':
-            rvec[2] += pi
-        elif name == 'left':
+        
+        if name == 'front':
+            rvec[2] += -pi/2
+        elif name == 'back':
             rvec[2] += pi/2
         elif name == 'right':
-            rvec[2] += -pi/2
+            rvec[2] += -pi
+        #elif name == 'left':
+        #    rvec[2] += 0
 
         position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
-        angle = field_tags[tagId][2] - rvec[2]
+        angle = float((field_tags[tagId][2] - rvec[2])[0])
         # </Rotate Code> ^
 
         posList.append(position)
@@ -177,73 +178,57 @@ frame_count = 0
 while True:
     frame_count += 1
     print('FPS:',frame_count/(time()-start_time))
-    try:
-        fullPosList, fullRotList = [], []
-        posList0, rotList0 = findtags(cam_0, cam_0_name)
-        posList1, rotList1 = findtags(cam_1, cam_1_name)
-        fullPosList.extend(posList0); fullPosList.extend(posList1)
-        fullRotList.extend(rotList0); fullRotList.extend(rotList1)
+    
+    posList0, rotList0 = findtags(cam_0, cam_0_name)
+    posList1, rotList1 = findtags(cam_1, cam_1_name)
+    fullPosList = posList0 + posList1
+    fullRotList = rotList0 + rotList1
 
-        if len(fullPosList) > 0:
+    if len(fullPosList) > 0:
+        avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
+        avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
-            avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
-            avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
+        # Set Network table values (Weight, Xposition, Yposition, and Rotation)
+        if enable_network_tables:
+            wPub.set(len(fullPosList))
+            xPub.set(avg_pos[0])
+            yPub.set(avg_pos[1])
+            rPub.set(avg_rot)
 
-            # Set Network table values (Weight, Xposition, Yposition, and Rotation)
-            if enable_network_tables:
-                wPub.set(len(fullPosList))
-                xPub.set(avg_pos[0])
-                yPub.set(avg_pos[1])
-                rPub.set(avg_rot)
+    # <Draw Code with matplotlib> v
+    ax.clear()
 
-        # <Draw Code with matplotlib> v
-        ax.clear()
+    # Plot AprilTag locations
+    field_tags_x, field_tags_y, field_tags_r = zip(*field_tags)
+    field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
+    ax.scatter(field_tags_x, field_tags_y, color='b')
 
-        # Plot AprilTag locations
-        field_tags_x, field_tags_y, field_tags_r = zip(*field_tags)
-        field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
-        ax.scatter(field_tags_x, field_tags_y, color='b')
+    for i in range(len(FIELD_TAGS_X)):
+        ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
 
-        for i in range(len(FIELD_TAGS_X)):
-            ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
+    # Draw Game Field Boundary
+    fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
+    ax.add_patch(fieldrect)
 
-        # Draw Game Field Boundary
-        fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
-        ax.add_patch(fieldrect)
+    # Adjusting plot limits
+    ax.set_xlim(-9, 9)
+    ax.set_ylim(-4.5, 4.5)
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_title('2024 Game Field Positioning Simulation')
+    ax.grid(False)
 
-        # Adjusting plot limits
-        ax.set_xlim(-9, 9)
-        ax.set_ylim(-4.5, 4.5)
-        ax.set_aspect('equal', adjustable='box')
-        ax.set_title('2024 Game Field Positioning Simulation')
-        ax.grid(False)
+    # Draw robot
+    if len(fullPosList) > 0:
+        # draw each calculated position of robot, and average of all those.
+        for pos in fullPosList:
+            plt.plot(pos[0], pos[1], 'go', markersize=3)
+        plt.plot(avg_pos[0],avg_pos[1], 'bo', markersize=10)
+        # draw line segment showing direction robot is facing.
+        end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
+        plt.plot([avg_pos[0], end_point[0]], [avg_pos[1], end_point[1]], 'r-')
 
-        # Draw robot
-        if len(fullPosList) > 0:
-            #THIS CODE IS NOT NEEDED, since the same variables are defined above. delete it and verify.
-            avg_pos = [sum(coord[0] for coord in fullPosList) / len(fullPosList), sum(coord[1] for coord in fullPosList) / len(fullPosList)]
-            avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
+        # Update plot
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+    # </Draw Code with matplotlib> ^
 
-            # draw each calculated position of robot, and average of all those.
-            for pos in fullPosList:
-                plt.plot(pos[0], pos[1], 'go', markersize=3)
-            plt.plot(avg_pos[0],avg_pos[1], 'bo', markersize=10)
-            # draw line segment showing direction robot is facing.
-            end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
-            plt.plot([avg_pos[0], end_point[0]], [avg_pos[1], end_point[1]], 'r-')
-
-            # Update plot
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-        # </Draw Code with matplotlib> ^
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    except(KeyboardInterrupt):
-        back_cap.release()
-        left_cap.release()
-
-        print("/nCams Off. Program ended.")
-        cv2.destroyAllWindows()
-        break
