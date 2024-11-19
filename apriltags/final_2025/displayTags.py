@@ -5,8 +5,6 @@ import ntcore
 import pickle
 from getmac import get_mac_address
 from time import time
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 enable_network_tables = False
 
@@ -169,10 +167,6 @@ if enable_network_tables:
 
 del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed
 
-# Init plot
-plt.ion()
-fig, ax = plt.subplots(figsize=(8, 8))
-
 start_time = time()
 frame_count = 0
 while True:
@@ -194,41 +188,7 @@ while True:
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
             rPub.set(avg_rot)
-
-    # <Draw Code with matplotlib> v
-    ax.clear()
-
-    # Plot AprilTag locations
-    field_tags_x, field_tags_y, field_tags_r = zip(*field_tags)
-    field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
-    ax.scatter(field_tags_x, field_tags_y, color='b')
-
-    for i in range(len(FIELD_TAGS_X)):
-        ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
-
-    # Draw Game Field Boundary
-    fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
-    ax.add_patch(fieldrect)
-
-    # Adjusting plot limits
-    ax.set_xlim(-9, 9)
-    ax.set_ylim(-4.5, 4.5)
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_title('2024 Game Field Positioning Simulation')
-    ax.grid(False)
-
-    # Draw robot
-    if len(fullPosList) > 0:
-        # draw each calculated position of robot, and average of all those.
-        for pos in fullPosList:
-            plt.plot(pos[0], pos[1], 'go', markersize=3)
-        plt.plot(avg_pos[0],avg_pos[1], 'bo', markersize=10)
-        # draw line segment showing direction robot is facing.
-        end_point = (avg_pos[0] + cos(avg_rot)/2, avg_pos[1] + sin(avg_rot)/2)
-        plt.plot([avg_pos[0], end_point[0]], [avg_pos[1], end_point[1]], 'r-')
-
-        # Update plot
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-    # </Draw Code with matplotlib> ^
-
+        else:
+            print(f"w: {len(fullPosList)}\nx: {avg_pos[0]}\ny: {avg_pos[1]}\nr: {avg_rot}\n")
+        
+    cv2.waitKey(100)
