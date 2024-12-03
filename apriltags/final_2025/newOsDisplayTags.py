@@ -79,13 +79,13 @@ def findtags(cap, name):
         c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
         
-        if name == 'front':
+        if name == 'Front':
             rvec[2] += -pi/2
-        elif name == 'back':
+        elif name == 'Back':
             rvec[2] += pi/2
-        elif name == 'right':
+        elif name == 'Right':
             rvec[2] += -pi
-        #elif name == 'left':
+        #elif name == 'Left':
         #    rvec[2] += 0
 
         position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]

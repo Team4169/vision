@@ -87,7 +87,7 @@ def findtags(cap, name):
             rvec[2] += pi/2
         elif name == 'Right':
             rvec[2] += -pi
-        #elif name == 'left':
+        #elif name == 'Left':
         #    rvec[2] += 0
 
         position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
