@@ -1,7 +1,7 @@
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
-import ntcore
+#import ntcore
 import pickle
 from getmac import get_mac_address
 from time import time
@@ -105,25 +105,21 @@ def findtags(cap, name):
     return posList, rotList
 
 def getJetson():
-    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2}
+    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2, "48:b0:2d:c1:63:9b" : 1}
     return MACdict.get(get_mac_address(), None) # Returns None if invalid Jetson ID
 
 def parse_v4l2_devices(output):
     mappings = {}
-    lines = output.split('\n')
-    current_device = None
+    lines = str(output).split('\\n\\n')
     for line in lines:
-        if line.strip().endswith(':'):
-            current_device = line.strip()[:-1]
-        elif '/dev/video' in line:
-            video_index = line.strip().split('/')[-1]
-            if current_device:
-                mappings[current_device[-4:-1]] = int(video_index[-1])
+        if 'usb-70090000.xusb-' in line and '/dev/video' in line:
+            mappings[line.split('usb-70090000.xusb-')[1][0:3]] = int(line.split('/dev/video')[1])
     return mappings
 
 def get_v4l2_device_mapping():
     try:
-        output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
+        output = subprocess.check_output(['v4l2-ctl', '--list-devices'])
+        output = str(output)[2:-1]
         return parse_v4l2_devices(output)
     except subprocess.CalledProcessError as e:
         print("Error occurred")
@@ -148,11 +144,11 @@ cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
 # <Init Constants> v (cam_props and field_tags)
 cam_props = {}
 for cam_name in {cam_0_name, cam_1_name}:
-    with open (f"/home/aresuser/vision/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
+    with open (f"/home/robotics4169/vision/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
+with open (f"/home/robotics4169/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
     field_tags = pickle.load(f)
 # <Init Constants> ^
 
@@ -194,6 +190,8 @@ while True:
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
             rPub.set(avg_rot)
+        else:
+            print(f"w: {len(fullPosList)}\nx: {avg_pos[0]}\ny: {avg_pos[1]}\nr: {avg_rot}\n")
 
     # <Draw Code with matplotlib> v
     ax.clear()
@@ -203,7 +201,7 @@ while True:
     field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
     ax.scatter(field_tags_x, field_tags_y, color='b')
 
-    for i in range(len(FIELD_TAGS_X)):
+    for i in range(len(field_tags_x)):
         ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
 
     # Draw Game Field Boundary
