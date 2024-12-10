@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: pyntcore
+Version: 2023.4.3.0
+Summary: Binary wrappers for the FRC ntcore library
+Home-page: https://github.com/robotpy/pyntcore
+Author: RobotPy Development Team
+Author-email: robotpy@googlegroups.com
+License: BSD-3-Clause
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: robotpy-wpiutil ~=2023.4.3
+Requires-Dist: robotpy-wpinet ~=2023.4.3
+
+pyntcore
+========
+
+Python pybind11 wrappers around the C++ ntcore library.
