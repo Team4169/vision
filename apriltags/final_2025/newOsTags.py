@@ -165,8 +165,6 @@ while True:
             rPub.set(avg_rot)
         else:
             print(f"w: {len(fullPosList)}\nx: {avg_pos[0]}\ny: {avg_pos[1]}\nr: {avg_rot}\n")
-	        
-    
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

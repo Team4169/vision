@@ -226,8 +226,8 @@ while True:
         plt.plot([avg_pos[0], end_point[0]], [avg_pos[1], end_point[1]], 'r-')
 
         # Update plot
-        fig.canvas.draw()
-        fig.canvas.flush_events()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
     # </Draw Code with matplotlib> ^
 
     cv2.waitKey(100)
