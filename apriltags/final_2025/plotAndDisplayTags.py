@@ -203,7 +203,7 @@ while True:
     field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
     ax.scatter(field_tags_x, field_tags_y, color='b')
 
-    for i in range(len(FIELD_TAGS_X)):
+    for i in range(len(field_tags_x)):
         ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
 
     # Draw Game Field Boundary
