@@ -76,20 +76,20 @@ def findtags(cap, name):
             tvec[i] += offset_num
         # <Rotate Code> v
         # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
-        c=cos(field_tags[tagId][2]);s=sin(field_tags[tagId][2])
+        c=cos(field_tags[tagId][2] + rvec[1]);s=sin(field_tags[tagId][2] + rvec[1])
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-        
+
         if name == 'Front':
-            rvec[2] += -pi/2
+            rvec[1] += -pi/2
         elif name == 'Back':
-            rvec[2] += pi/2
+            rvec[1] += pi/2
         elif name == 'Right':
-            rvec[2] += -pi
+            rvec[1] += -pi
         #elif name == 'Left':
-        #    rvec[2] += 0
+        #    rvec[1] += 0
 
         position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
-        angle = float((field_tags[tagId][2] - rvec[2])[0])
+        angle = float((field_tags[tagId][2] + rvec[1] - pi)[0])
         # </Rotate Code> ^
 
         posList.append(position)
@@ -186,6 +186,5 @@ while True:
             rPub.set(avg_rot)
         else:
             print(f"w: {len(fullPosList)}\nx: {avg_pos[0]}\ny: {avg_pos[1]}\nr: {avg_rot}\n")
-
         
     cv2.waitKey(100)
