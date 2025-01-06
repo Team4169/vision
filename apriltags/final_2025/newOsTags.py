@@ -47,7 +47,7 @@ def findtags(cap, name):
     # loop over the AprilTag detection results, do math to find robots position and rotation and append to posList and rotList.
     for r in results:
         tagId = r.tag_id + 1
-        if tagId not in range(1,17): # Competition only uses tags 1 to 16, if another one is found ignore it.
+        if tagId not in range(1,23): # Competition only uses tags 1 to 23, if another one is found ignore it.
             continue
 
         tag_size = .08255 # Distance in meters from the middle of the tag to the end of the black part of the tag. Also equal to half the side length of the black part of the april tag. Change it if the tag size changes. 

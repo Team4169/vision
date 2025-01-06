@@ -47,7 +47,7 @@ def findtags(cap, name):
     # loop over the AprilTag detection results, do math to find robots position and rotation and append to posList and rotList.
     for r in results:
         tagId = r.tag_id + 1
-        if tagId not in range(1,17): # Competition only uses tags 1 to 16, if another one is found ignore it.
+        if tagId not in range(1,23): # Competition only uses tags 1 to 23, if another one is found ignore it.
             continue
 
         # extract the bounding box (x, y)-coordinates for the AprilTag, and convert each of the (x, y)-coordinate pairs to integers
