@@ -50,9 +50,10 @@ def findtags(cap, name):
         if tagId not in range(1,17): # Competition only uses tags 1 to 16, if another one is found ignore it.
             continue
 
-        # 0.085725 is for meters, use 3.375 of you want inches. This number is the size of the tags, change it if the tag size changes.
-        object_points = np.array([[-0.085725,-0.085725,0],[0.085725,-0.085725,0],[0.085725,0.085725,0],[-0.085725,0.085725,0],[0,0,0]], dtype=np.float32)
-        image_points = np.array([r.corners[0],r.corners[1],r.corners[2],r.corners[3],r.center], dtype=np.float32)
+	tag_size = .08255 # Distance in meters from the middle of the tag to the end of the black part of the tag. Also equal to half the side length of the black part of the april tag. Change it if the tag size changes. 
+        object_points = np.array([[-tag_size, -tag_size, 0], [tag_size, -tag_size, 0], [tag_size, tag_size, 0], [-tag_size, tag_size, 0], [0, 0, 0]], dtype=np.float32)
+
+        image_points = np.array([r.corners[0], r.corners[1], r.corners[2], r.corners[3], r.center], dtype=np.float32)
 
         _, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, distortion_coefficients)
         for i, offset_num in enumerate(origin_offset):
