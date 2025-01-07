@@ -161,6 +161,10 @@ if enable_network_tables:
     xPub = table.getDoubleTopic("x1").publish()
     yPub = table.getDoubleTopic("y1").publish()
     rPub = table.getDoubleTopic("r1").publish()
+        
+    inst.startClient4("Cameras from Jetson 1")
+    inst.setServerTeam(4169)
+    inst.startDSClient()
 # <Init NetworkTables> ^
 
 del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed

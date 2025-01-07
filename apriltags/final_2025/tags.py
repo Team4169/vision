@@ -6,7 +6,7 @@ import pickle
 from getmac import get_mac_address
 from time import time
 
-enable_network_tables = False
+enable_network_tables = True
 
 detector = apriltag.Detector(
 apriltag.DetectorOptions(families='tag36h11',
@@ -50,7 +50,7 @@ def findtags(cap, name):
         if tagId not in range(1,23): # Competition only uses tags 1 to 23, if another one is found ignore it.
             continue
 
-	tag_size = .08255 # Distance in meters from the middle of the tag to the end of the black part of the tag. Also equal to half the side length of the black part of the april tag. Change it if the tag size changes. 
+        tag_size = .08255 # Distance in meters from the middle of the tag to the end of the black part of the tag. Also equal to half the side length of the black part of the april tag. Change it if the tag size changes. 
         object_points = np.array([[-tag_size, -tag_size, 0], [tag_size, -tag_size, 0], [tag_size, tag_size, 0], [-tag_size, tag_size, 0], [0, 0, 0]], dtype=np.float32)
 
         image_points = np.array([r.corners[0], r.corners[1], r.corners[2], r.corners[3], r.center], dtype=np.float32)
@@ -143,6 +143,10 @@ if enable_network_tables:
     xPub = table.getDoubleTopic("x1").publish()
     yPub = table.getDoubleTopic("y1").publish()
     rPub = table.getDoubleTopic("r1").publish()
+    
+    inst.startClient4("Cameras from Jetson 1")
+    inst.setServerTeam(4169)
+    inst.startDSClient()
 # <Init NetworkTables> ^
 
 del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed
