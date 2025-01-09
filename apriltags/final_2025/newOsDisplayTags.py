@@ -148,8 +148,9 @@ for cam_name in {cam_0_name, cam_1_name}:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-with open (f"/home/robotics4169/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
+with open (f"/home/robotics4169/vision/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
     field_tags = pickle.load(f)
+    # List of dictionaries, looks like: [{'ID': 1, 'x': 16.7, 'Y': 0.655, 'Z': 1.49, 'Z-Rotation': 2.20, 'Y-Rotation': 0.0} ...]
 # <Init Constants> ^
 
 # <Init NetworkTables> v
