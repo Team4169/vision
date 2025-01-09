@@ -5,6 +5,8 @@ import ntcore
 import pickle
 from getmac import get_mac_address
 from time import time
+from dotnet import load_dotenv
+import os
 
 enable_network_tables = True
 
@@ -85,10 +87,9 @@ def findtags(cap, name):
     return posList, rotList
 
 def getJetson():
-    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2}
     return MACdict.get(get_mac_address(), None) # Returns None if invalid Jetson ID
 
-def parse_v4l2_devices(output):
+def parse_v4l2_devices_old_os(output):
     mappings = {}
     lines = output.split('\n')
     current_device = None
@@ -101,14 +102,34 @@ def parse_v4l2_devices(output):
                 mappings[current_device[-4:-1]] = int(video_index[-1])
     return mappings
 
-def get_v4l2_device_mapping():
+def get_v4l2_device_mapping_old_os():
     try:
         output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
         return parse_v4l2_devices(output)
     except subprocess.CalledProcessError as e:
         print("Error occurred")
         return parse_v4l2_devices(e.output)
+
+def parse_v4l2_devices_new_os(output):
+    mappings = {}
+    lines = str(output).split('\\n\\n')
+    for line in lines:
+        if 'usb-70090000.xusb-' in line and '/dev/video' in line:
+            mappings[line.split('usb-70090000.xusb-')[1][0:3]] = int(line.split('/dev/video')[1])
+    return mappings
+
+def get_v4l2_device_mapping_new_os():
+    try:
+        output = subprocess.check_output(['v4l2-ctl', '--list-devices'])
+        output = str(output)[2:-1]
+        return parse_v4l2_devices(output)
+    except subprocess.CalledProcessError as e:
+        print("Error occurred")
+        return parse_v4l2_devices(e.output)
  
+
+load_dotenv()
+
 jetsonID = getJetson()
 cam_0_name = ''
 cam_1_name = ''
@@ -121,7 +142,11 @@ elif jetsonID == 2:
     cam_1_name = "Left"
 else:
     raise Exception('Invalid Jetson ID')
-cam_mapping = get_v4l2_device_mapping()
+
+if os.getenv("NEW_OS"):
+    cam_mapping = get_v4l2_device_mapping_new_os()
+else:
+    cam_mapping = get_v4l2_device_mapping_old_os()
 cam_0 = cv2.VideoCapture(int(cam_mapping["2.1"]))
 cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
@@ -152,7 +177,7 @@ if enable_network_tables:
     inst.startDSClient()
 # <Init NetworkTables> ^
 
-del getJetson, parse_v4l2_devices, get_v4l2_device_mapping # Delete these functions from memory because they are no longer needed
+del getJetson, parse_v4l2_devices_old_os, parse_v4l2_devices_new_os, get_v4l2_device_mapping_new_os, get_v4l2_device_mapping_old_os # Delete these functions from memory because they are no longer needed
 
 start_time = time()
 frame_count = 0

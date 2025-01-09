@@ -107,7 +107,7 @@ def findtags(cap, name):
     return posList, rotList
 
 def getJetson():
-    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2}
+    MACdict = {"48:b0:2d:c1:63:9c" : 1, "48:b0:2d:ec:31:82" : 2, "48:b0:2d:c1:63:9b" : 1}
     return MACdict.get(get_mac_address(), None) # Returns None if invalid Jetson ID
 
 def parse_v4l2_devices(output):

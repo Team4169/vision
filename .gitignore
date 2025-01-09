@@ -4,3 +4,4 @@ venv/
 frc2023dataset.zip
 frc2023dataset/
 .DS_Store
+.env
