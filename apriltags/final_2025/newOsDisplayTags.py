@@ -49,6 +49,7 @@ def findtags(cap, name):
         tagId = r.tag_id + 1
         if tagId not in range(1,23): # Competition only uses tags 1 to 23, if another one is found ignore it.
             continue
+        seen_tag = field_tags[tagId]
 
         # extract the bounding box (x, y)-coordinates for the AprilTag, and convert each of the (x, y)-coordinate pairs to integers
         (ptA, ptB, ptC, ptD) = r.corners
@@ -76,20 +77,21 @@ def findtags(cap, name):
             tvec[i] += offset_num
         # <Rotate Code> v
         # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
-        c=cos(field_tags[tagId][2] + rvec[1]);s=sin(field_tags[tagId][2] + rvec[1])
+        c=cos(seen_tag['Z-Rotation'] + rvec[1] + pi/2);s=sin(seen_tag['Z-Rotation'] + rvec[1] + pi/2)
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
-
-        if name == 'Front':
-            rvec[1] += -pi/2
-        elif name == 'Back':
-            rvec[1] += pi/2
-        elif name == 'Right':
-            rvec[1] += -pi
-        #elif name == 'Left':
+        
+        #if name == 'Front':
         #    rvec[1] += 0
+        #el
+        if name == 'Back':
+            rvec[1] += pi
+        elif name == 'Right':
+            rvec[1] += -pi/2
+        elif name == 'Left':
+            rvec[1] += pi/2
 
-        position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
-        angle = float((field_tags[tagId][2] + rvec[1] - pi)[0])
+        position = [seen_tag['X'] - tvec[0], seen_tag['Y'] - tvec[2]]
+        angle = float((seen_tag['Z-Rotation'] + rvec[1] - pi)[0])
         # </Rotate Code> ^
 
         posList.append(position)
