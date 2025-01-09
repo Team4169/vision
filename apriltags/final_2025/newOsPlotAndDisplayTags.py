@@ -51,6 +51,7 @@ def findtags(cap, name):
         tagId = r.tag_id + 1
         if tagId not in range(1,23): # Competition only uses tags 1 to 23, if another one is found ignore it.
             continue
+        seen_tag = field_tags[tagId]
 
         # extract the bounding box (x, y)-coordinates for the AprilTag, and convert each of the (x, y)-coordinate pairs to integers
         (ptA, ptB, ptC, ptD) = r.corners
@@ -78,20 +79,21 @@ def findtags(cap, name):
             tvec[i] += offset_num
         # <Rotate Code> v
         # Based on the tag that we see, and which camera sees it, do math to find out where the robot must be to see that tag in that relative position and orientation.
-        c=cos(field_tags[tagId][2] + rvec[1]);s=sin(field_tags[tagId][2] + rvec[1])
+        c=cos(seen_tag['Z-Rotation'] + rvec[1] + pi/2);s=sin(seen_tag['Z-Rotation'] + rvec[1] + pi/2)
         tvec = [tvec[0]*c - tvec[2]*s, tvec[1], tvec[0]*s + tvec[2]*c]
         
-        if name == 'Front':
-            rvec[1] += -pi/2
-        elif name == 'Back':
-            rvec[1] += pi/2
-        elif name == 'Right':
-            rvec[1] += -pi
-        #elif name == 'Left':
+        #if name == 'Front':
         #    rvec[1] += 0
+        #el
+        if name == 'Back':
+            rvec[1] += pi
+        elif name == 'Right':
+            rvec[1] += -pi/2
+        elif name == 'Left':
+            rvec[1] += pi/2
 
-        position = [field_tags[tagId][0] - tvec[0], field_tags[tagId][1] - tvec[2]]
-        angle = float((field_tags[tagId][2] + rvec[1] - pi)[0])
+        position = [seen_tag['X'] - tvec[0], seen_tag['Y'] - tvec[2]]
+        angle = float((seen_tag['Z-Rotation'] + rvec[1] - pi)[0])
         # </Rotate Code> ^
 
         posList.append(position)
@@ -148,8 +150,9 @@ for cam_name in {cam_0_name, cam_1_name}:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-with open (f"/home/robotics4169/vision/apriltags/maps/fieldTagsConfig.pkl", 'rb') as f:
+with open (f"/home/robotics4169/vision/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
     field_tags = pickle.load(f)
+    # List of dictionaries, looks like: [{'ID': 1, 'x': 16.7, 'Y': 0.655, 'Z': 1.49, 'Z-Rotation': 2.20, 'Y-Rotation': 0.0} ...]
 # <Init Constants> ^
 
 # <Init NetworkTables> v
@@ -201,22 +204,27 @@ while True:
     ax.clear()
 
     # Plot AprilTag locations
-    field_tags_x, field_tags_y, field_tags_r = zip(*field_tags)
-    field_tags_id = [i for i in range(len(field_tags))]; field_tags_id[0] = 'x'
+    field_tags_x, field_tags_y, field_tags_r, field_tags_id = [], [], [], []
+    for tag in field_tags:
+        field_tags_x.append(tag['X'])
+        field_tags_y.append(tag['Y'])
+        field_tags_r.append(tag['Z-Rotation'])
+        field_tags_id.append(tag['ID'])
+    field_tags_id[0] = 'origin'
     ax.scatter(field_tags_x, field_tags_y, color='b')
 
     for i in range(len(field_tags_x)):
         ax.annotate(field_tags_id[i], (field_tags_x[i] + 0.45, field_tags_y[i] - 0.45), textcoords="offset points", xytext=(0, 0), ha='center')
 
     # Draw Game Field Boundary
-    fieldrect = patches.Rectangle((0, -2), 7.04215, 4, linewidth=1, edgecolor='b', facecolor='none')
+    fieldrect = patches.Rectangle((0, 0), 17.548352, 8.0518, linewidth=1, edgecolor='b', facecolor='none')
     ax.add_patch(fieldrect)
 
     # Adjusting plot limits
-    ax.set_xlim(-9, 9)
-    ax.set_ylim(-4.5, 4.5)
+    ax.set_xlim(-1, 18.548352)
+    ax.set_ylim(-1, 9.0518)
     ax.set_aspect('equal', adjustable='box')
-    ax.set_title('2024 Game Field Positioning Simulation')
+    ax.set_title('2025 Game Field Positioning Simulation')
     ax.grid(False)
 
     # Draw robot
