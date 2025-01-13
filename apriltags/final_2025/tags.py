@@ -1,26 +1,34 @@
 import apriltag, cv2, subprocess
 from math import sin, cos, atan2, pi
 import numpy as np
-import ntcore
 import pickle
-from getmac import get_mac_address
 from time import time
-from dotnet import load_dotenv
-import os
+from dotenv import load_dotenv
+from os import getenv
+import sys
 
-enable_network_tables = True
+# <Intialize enviornment variables> v
+load_dotenv()
+
+ENABLE_NETWORK_TABLES = int(getenv("ENABLE_NETWORK_TABLES"))
+NEW_OS = int(getenv("NEW_OS"))
+JETSON_ID = getenv("JETSON_ID")
+# </Intialize enviornment variables> ^
+
+if ENABLE_NETWORK_TABLES:
+    import ntcore
 
 detector = apriltag.Detector(
-apriltag.DetectorOptions(families='tag36h11',
-                         border=1,
-                         nthreads=4,
-                         quad_decimate=0.0,
-                         quad_blur=0.0,
-                         refine_edges=True,
-                         refine_decode=False,
-                         refine_pose=False,
-                         debug=True, # change maybe
-                         quad_contours=False))
+    apriltag.DetectorOptions(families='tag36h11',
+                             border=1,
+                             nthreads=4,
+                             quad_decimate=0.0,
+                             quad_blur=0.0,
+                             refine_edges=True,
+                             refine_decode=False,
+                             refine_pose=False,
+                             debug=True, # change maybe
+                             quad_contours=False))
 
 def findtags(cap, name):
 
@@ -86,105 +94,98 @@ def findtags(cap, name):
 
     return posList, rotList
 
-def getJetson():
-    return MACdict.get(get_mac_address(), None) # Returns None if invalid Jetson ID
-
-def parse_v4l2_devices_old_os(output):
+def parse_v4l2_devices(output):
     mappings = {}
-    lines = output.split('\n')
-    current_device = None
-    for line in lines:
-        if line.strip().endswith(':'):
-            current_device = line.strip()[:-1]
-        elif '/dev/video' in line:
-            video_index = line.strip().split('/')[-1]
-            if current_device:
-                mappings[current_device[-4:-1]] = int(video_index[-1])
+    if NEW_OS:
+        lines = str(output).split('\\n\\n')
+        for line in lines:
+            if 'usb-70090000.xusb-' in line and '/dev/video' in line:
+                mappings[line.split('usb-70090000.xusb-')[1][0:3]] = int(line.split('/dev/video')[1])
+    else:
+        lines = output.split('\n')
+        current_device = None
+        for line in lines:
+            if line.strip().endswith(':'):
+                current_device = line.strip()[:-1]
+            elif '/dev/video' in line:
+                video_index = line.strip().split('/')[-1]
+                if current_device:
+                    mappings[current_device[-4:-1]] = int(video_index[-1])
     return mappings
 
-def get_v4l2_device_mapping_old_os():
+def get_v4l2_devices():
     try:
-        output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
+        if NEW_OS:
+            output = str(subprocess.check_output(['v4l2-ctl', '--list-devices']))[2:-1]
+        else:
+            output = subprocess.check_output(['v4l2-ctl', '--list-devices'], text=True)
         return parse_v4l2_devices(output)
     except subprocess.CalledProcessError as e:
         print("Error occurred")
         return parse_v4l2_devices(e.output)
 
-def parse_v4l2_devices_new_os(output):
-    mappings = {}
-    lines = str(output).split('\\n\\n')
-    for line in lines:
-        if 'usb-70090000.xusb-' in line and '/dev/video' in line:
-            mappings[line.split('usb-70090000.xusb-')[1][0:3]] = int(line.split('/dev/video')[1])
-    return mappings
-
-def get_v4l2_device_mapping_new_os():
-    try:
-        output = subprocess.check_output(['v4l2-ctl', '--list-devices'])
-        output = str(output)[2:-1]
-        return parse_v4l2_devices(output)
-    except subprocess.CalledProcessError as e:
-        print("Error occurred")
-        return parse_v4l2_devices(e.output)
- 
-
-load_dotenv()
-
-jetsonID = getJetson()
 cam_0_name = ''
 cam_1_name = ''
 # Initialize cams with correct Jetson
-if jetsonID == 1:
+if JETSON_ID == "1":
     cam_0_name = "Front"
     cam_1_name = "Right"
-elif jetsonID == 2:
+elif JETSON_ID == "2":
     cam_0_name = "Back"
     cam_1_name = "Left"
 else:
     raise Exception('Invalid Jetson ID')
 
-if os.getenv("NEW_OS"):
-    cam_mapping = get_v4l2_device_mapping_new_os()
-else:
-    cam_mapping = get_v4l2_device_mapping_old_os()
+cam_mapping = get_v4l2_devices()
+
 cam_0 = cv2.VideoCapture(int(cam_mapping["2.1"]))
 cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init Constants> v (cam_props and field_tags)
 cam_props = {}
+repo_path = ''
+if NEW_OS:
+    repo_path = "/home/robotics4169/vision"
+else:
+    repo_path = "/home/aresuser/vision"
+
 for cam_name in {cam_0_name, cam_1_name}:
-    with open (f"/home/aresuser/vision/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
+    with open (f"{repo_path}/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-with open (f"/home/aresuser/vision/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
+with open (f"{repo_path}/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
     field_tags = pickle.load(f)
-    # List of dictionaries, looks like: [{'ID': 1, 'x': 16.7, 'Y': 0.655, 'Z': 1.49, 'Z-Rotation': 2.20, 'Y-Rotation': 0.0} ...]
+    # 'field_tags' is a list of dictionaries. It contains the data for the apriltags on the 2025 field (update for future seasons).
+    # It looks looks like: [{'ID': 1, 'X': 16.7, 'Y': 0.655, 'Z': 1.49, 'Z-Rotation': 2.20, 'Y-Rotation': 0.0} ...]
+del repo_path
 # <Init Constants> ^
 
 # <Init NetworkTables> v
-if enable_network_tables:
+if ENABLE_NETWORK_TABLES:
     inst = ntcore.NetworkTableInstance.getDefault()
     table = inst.getTable("SmartDashboard")
 
-    wPub = table.getDoubleTopic("w1").publish()
-    xPub = table.getDoubleTopic("x1").publish()
-    yPub = table.getDoubleTopic("y1").publish()
-    rPub = table.getDoubleTopic("r1").publish()
-    
-    inst.startClient4("Cameras from Jetson 1")
+    wPub = table.getDoubleTopic(f"w{JETSON_ID}").publish()
+    xPub = table.getDoubleTopic(f"x{JETSON_ID}").publish()
+    yPub = table.getDoubleTopic(f"y{JETSON_ID}").publish()
+    rPub = table.getDoubleTopic(f"r{JETSON_ID}").publish()
+
+    inst.startClient4(f"Cameras from Jetson {JETSON_ID}")
     inst.setServerTeam(4169)
     inst.startDSClient()
 # <Init NetworkTables> ^
 
-del getJetson, parse_v4l2_devices_old_os, parse_v4l2_devices_new_os, get_v4l2_device_mapping_new_os, get_v4l2_device_mapping_old_os # Delete these functions from memory because they are no longer needed
-
 start_time = time()
 frame_count = 0
-while True:
-    frame_count += 1
+
+while True: # Periodic code
     print('FPS:',frame_count/(time()-start_time))
-    
+    frame_count += 1
+    if time()-start_time > 5:
+        start_time = time()
+        frame_count = 1
+
     posList0, rotList0 = findtags(cam_0, cam_0_name)
     posList1, rotList1 = findtags(cam_1, cam_1_name)
     fullPosList = posList0 + posList1
@@ -195,7 +196,7 @@ while True:
         avg_rot = atan2(sum(sin(angle) for angle in fullRotList) / len(fullRotList), sum(cos(angle) for angle in fullRotList) / len(fullRotList)) % (2 * pi)
 
         # Set Network table values (Weight, Xposition, Yposition, and Rotation)
-        if enable_network_tables:
+        if ENABLE_NETWORK_TABLES:
             wPub.set(len(fullPosList))
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
@@ -205,3 +206,4 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
