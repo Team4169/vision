@@ -43,7 +43,7 @@ apriltag_family_t *tag36h11_create()
    tf->d = 6;
    tf->h = 11;
    tf->ncodes = 22;
-   tf->codes = calloc(16, sizeof(uint64_t));
+   tf->codes = calloc(22, sizeof(uint64_t));
    tf->codes[0] = 0x0000000d97f18b49UL;
    tf->codes[1] = 0x0000000dd280910eUL;
    tf->codes[2] = 0x0000000e479e9c98UL;
