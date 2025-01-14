@@ -96,9 +96,9 @@ def findtags(cap, name):
         if name == 'Back':
             rvec[1] += pi
         elif name == 'Right':
-            rvec[1] += -pi/2
-        elif name == 'Left':
             rvec[1] += pi/2
+        elif name == 'Left':
+            rvec[1] += -pi/2
 
         position = [seen_tag['X'] - tvec[0], seen_tag['Y'] - tvec[2]]
         angle = float((seen_tag['Z-Rotation'] + rvec[1] - pi)[0])
@@ -147,12 +147,12 @@ def get_v4l2_devices():
 cam_0_name = ''
 cam_1_name = ''
 # Initialize cams with correct Jetson
-if JETSON_ID == "1":
-    cam_0_name = "Front"
-    cam_1_name = "Right"
-elif JETSON_ID == "2":
-    cam_0_name = "Back"
-    cam_1_name = "Left"
+if JETSON_ID == '1':
+    cam_0_name = 'Front'
+    cam_1_name = 'Right'
+elif JETSON_ID == '2':
+    cam_0_name = 'Back'
+    cam_1_name = 'Left'
 else:
     raise Exception('Invalid Jetson ID')
 
@@ -163,22 +163,16 @@ cam_1 = cv2.VideoCapture(int(cam_mapping["2.2"]))
 
 # <Init Constants> v (cam_props and field_tags)
 cam_props = {}
-repo_path = ''
-if NEW_OS:
-    repo_path = "/home/robotics4169/vision"
-else:
-    repo_path = "/home/aresuser/vision"
 
 for cam_name in {cam_0_name, cam_1_name}:
-    with open (f"{repo_path}/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
+    with open (f"{'/home/robotics4169/vision' if NEW_OS else '/home/aresuser/vision'}/calibration/camConfig/camConfig{cam_name}.pkl", 'rb') as f:
         f_data = pickle.load(f)
         cam_props[cam_name] = {'cam_matrix': f_data[0], 'dist': f_data[1], 'offset': f_data[2]}
 
-with open (f"{repo_path}/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
+with open (f"{'/home/robotics4169/vision' if NEW_OS else '/home/aresuser/vision'}/apriltags/maps/fieldTagsConfig_2025.pkl", 'rb') as f:
     field_tags = pickle.load(f)
     # 'field_tags' is a list of dictionaries. It contains the data for the apriltags on the 2025 field (update for future seasons).
     # It looks looks like: [{'ID': 1, 'X': 16.7, 'Y': 0.655, 'Z': 1.49, 'Z-Rotation': 2.20, 'Y-Rotation': 0.0} ...]
-del repo_path
 # <Init Constants> ^
 
 # <Init NetworkTables> v
