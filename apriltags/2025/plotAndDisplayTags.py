@@ -9,13 +9,16 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# <Intialize enviornment variables> v
+# <Intialize enviornment variables and options> v
 load_dotenv()
 
 ENABLE_NETWORK_TABLES = int(getenv("ENABLE_NETWORK_TABLES"))
 NEW_OS = int(getenv("NEW_OS"))
 JETSON_ID = getenv("JETSON_ID")
-# </Intialize enviornment variables> ^
+
+SHOW_FPS = True
+PRINT_FOUND_TAGS = True
+# </Intialize enviornment variables and options> ^
 
 if ENABLE_NETWORK_TABLES:
     import ntcore
@@ -197,15 +200,17 @@ plt.ion()
 fig, ax = plt.subplots(figsize=(8, 8))
 # </Init Plot ^
 
-start_time = time()
-frame_count = 0
+if SHOW_FPS:
+    start_time = time()
+    frame_count = 0
 
 while True: # Periodic code
-    print('FPS:',frame_count/(time()-start_time))
-    frame_count += 1
-    if time()-start_time > 5:
-        start_time = time()
-        frame_count = 1
+    if SHOW_FPS:
+        print('FPS:',frame_count/(time()-start_time))
+        frame_count += 1
+        if time()-start_time > 5:
+            start_time = time()
+            frame_count = 1
 
     posList0, rotList0 = findtags(cam_0, cam_0_name)
     posList1, rotList1 = findtags(cam_1, cam_1_name)
@@ -222,7 +227,7 @@ while True: # Periodic code
             xPub.set(avg_pos[0])
             yPub.set(avg_pos[1])
             rPub.set(avg_rot)
-        else:
+        if PRINT_FOUND_TAGS:
             print(f"w: {len(fullPosList)}\nx: {avg_pos[0]}\ny: {avg_pos[1]}\nr: {avg_rot}\n")
 
     # <Draw Code with matplotlib> v
