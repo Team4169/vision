@@ -16,7 +16,7 @@ inst.setServerTeam(4169)
 inst.startDSClient()
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-conf", "--config", help="Trained YOLO json config path", default='/home/aresuser/vision/depth/2024model/YOLOv8nNORO.json', type=str)
+parser.add_argument("-conf", "--config", help="Trained YOLO yaml config path", default='/home/aresuser/vision/depth/2025algae/best.json', type=str)
 args = ArgsParser.parseArgs(parser)
 
 def printDetections(packet):
@@ -35,6 +35,6 @@ with OakCamera(args=args) as oak:
     nn = oak.create_nn(args['config'], color, nn_type='yolo')
     nn.config_nn(conf_threshold=0.5)
     visualizer = oak.visualize(nn.out.passthrough, callback=printDetections, fps = True)
-    #visualizer = oak.visualize(nn.out.passthrough, fps=True)
+    visualizer = oak.visualize(nn.out.passthrough, fps=True)
     oak.start(blocking=True)
     

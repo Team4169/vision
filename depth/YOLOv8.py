@@ -1,16 +1,16 @@
 from depthai_sdk import OakCamera, ArgsParser
 from depthai_sdk.visualize.configs import BboxStyle, TextPosition
 import argparse, time
-from networktables import NetworkTables
+# from networktables import NetworkTables
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
-NetworkTables.initialize()
-sd = NetworkTables.getTable("SmartDashboard")
+# NetworkTables.initialize()
+# sd = NetworkTables.getTable("SmartDashboard")
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-conf", "--config", help="Trained YOLO json config path", default='/home/jetson/vision/depth/2024model/YOLOv8nNORO.json', type=str)
+parser.add_argument("-conf", "--config", help="Trained YOLO json config path", default='/home/aresuser/vision/depth/2025cage/best.json', type=str)
 args = ArgsParser.parseArgs(parser)
 
 def printDetections(packet):
@@ -22,8 +22,8 @@ def printDetections(packet):
             #print(packet.detections[i].img_detection.spatialCoordinates.x, packet.detections[i].img_detection.spatialCoordinates.y, packet.detections[i].img_detection.spatialCoordinates.z)
             print(f"objHorizontal: {packet.detections[i].img_detection.spatialCoordinates.y}")
             print(f"objDistance: {packet.detections[i].img_detection.spatialCoordinates.z}")
-            sd.putNumber("objHorizontal", packet.detections[i].img_detection.spatialCoordinates.y + 0.1524)
-            sd.putNumber("objDistance", packet.detections[i].img_detection.spatialCoordinates.z + 0.2159)
+            # sd.putNumber("objHorizontal", packet.detections[i].img_detection.spatialCoordinates.y + 0.1524)
+            # sd.putNumber("objDistance", packet.detections[i].img_detection.spatialCoordinates.z + 0.2159)
         
 
 with OakCamera(args=args) as oak:
