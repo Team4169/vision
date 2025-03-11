@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from os import getenv
 import sys
 
+
 # <Intialize enviornment variables and options> v
 load_dotenv()
 
