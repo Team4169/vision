@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 inst = ntcore.NetworkTableInstance.getDefault()
 table = inst.getTable("SmartDashboard")
 
+# networktables publisher: this publishes the distance and horizontal distance to the algae and publishes it over the network. There needs to be a server (roborio) on the network for this to work.
 objHor = table.getDoubleTopic("objHorizontal").publish()
 objDist = table.getDoubleTopic("objDistance").publish()
 detectingAlgae = table.getBooleanTopic("detectingAlgae").publish()

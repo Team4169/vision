@@ -1,0 +1,4 @@
+1. We downloaded a model from roboflow for the coral and algae
+2. We trained a yolov8n model using the public roboflow jupyter notebooks
+3. https://tools.luxonis.com/ converted the model to openvino as a json file
+4. The json file is plugged into midstageDetection.py and fieldDetection.py
