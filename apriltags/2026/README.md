@@ -1,4 +1,4 @@
-2025 apriltag code
+2026 apriltag code
 ==========
 
 The three files `tags.py`, `displayTags.py`, and `plotAndDisplayTags.py`, contain all the code for finding tags.
